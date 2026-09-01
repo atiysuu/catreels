@@ -37,7 +37,8 @@ class Config:
 
     # --- Gemini (konsept metni; AI Studio ucretsiz katmani) ----------------
     gemini_api_key: str = field(default_factory=lambda: _str("GEMINI_API_KEY"))
-    gemini_model: str = field(default_factory=lambda: _str("GEMINI_MODEL", "gemini-2.5-flash"))
+    # Bos birakilirsa textgen.py'deki zincirin basindan baslanir.
+    gemini_model: str = field(default_factory=lambda: _str("GEMINI_MODEL"))
 
     # --- Pollinations ------------------------------------------------------
     pollinations_key: str = field(default_factory=lambda: _str("POLLINATIONS_API_KEY"))

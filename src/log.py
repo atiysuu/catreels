@@ -3,6 +3,15 @@ import os
 import sys
 import time
 
+# Turkce Windows konsolu cp1254 kullaniyor ve Turkce aciklamalardaki emoji
+# yazdirmayi UnicodeEncodeError ile cokertiyor. CI (Linux) bundan etkilenmiyor,
+# ama yerel --dry-run kosusu tam da videoyu urettikten sonra patliyordu.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, OSError):
+    pass
+
 _T0 = time.time()
 _GHA = os.getenv("GITHUB_ACTIONS") == "true"
 
