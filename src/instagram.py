@@ -73,13 +73,55 @@ class Instagram:
             raise InstagramError(f"GET {path} -> {_explain(r)}")
         return r.json()
 
-    # -- tanilama ------------------------------------------------------------
+    # -- kimlik --------------------------------------------------------------
+    def me(self) -> dict:
+        """/me uzerinden hesabi tanir.
+
+        Instagram Login akisinda /me iki ayri kimlik donduruyor: `id`
+        (uygulama kapsamli kimlik) ve `user_id` (Instagram profesyonel hesap
+        kimligi). Meta'nin dokumani icerik yayinlama uclarinda hangisinin
+        kullanilacagini acikca yazmiyor, bu yuzden ikisini de okuyup
+        user_id'yi tercih ediyoruz.
+        """
+        return self._get("me", {"fields": "user_id,username,account_type"})
+
+    def resolve_user_id(self) -> str:
+        """IG_USER_ID verilmemisse -- ya da kullanici adi yazilmissa -- tokenden turetir.
+
+        Kurulumun en cok hata alinan adimi dogru kimligi bulmak. Token zaten
+        hangi hesaba ait oldugunu biliyor, o yuzden sormaya gerek yok.
+
+        Sik yapilan hata buraya @kullaniciadi yazmak; Graph API sayisal hesap
+        kimligi bekliyor ve kullanici adiyla cagri sessizce basarisiz oluyor.
+        Sayisal olmayan bir deger gorursek yok sayip tokenden buluyoruz.
+        """
+        current = self.cfg.ig_user_id.lstrip("@")
+        if current.isdigit():
+            return current
+        if current:
+            log.warn(f"IG_USER_ID sayisal degil ({current!r}) -- bu kullanici adi "
+                     f"gibi gorunuyor. Graph API sayisal kimlik bekliyor; "
+                     f"dogru deger tokenden bulunuyor.")
+        data = self.me()
+        uid = str(data.get("user_id") or data.get("id") or "")
+        if not uid:
+            raise InstagramError(f"/me hesap kimligi dondurmedi: {data}")
+        log.info(f"IG_USER_ID verilmemis, tokenden bulundu: {uid} "
+                 f"(@{data.get('username')})")
+        self.cfg.ig_user_id = uid
+        return uid
+
     def whoami(self) -> dict:
-        return self._get(self.cfg.ig_user_id, {"fields": "id,username,account_type"})
+        uid = self.resolve_user_id()
+        try:
+            return self._get(uid, {"fields": "id,username,account_type"})
+        except InstagramError:
+            # Bazi hesaplarda numerik kimlik yerine yalnizca /me okunabiliyor.
+            return self.me()
 
     def quota(self) -> dict:
         try:
-            data = self._get(f"{self.cfg.ig_user_id}/content_publishing_limit",
+            data = self._get(f"{self.resolve_user_id()}/content_publishing_limit",
                              {"fields": "config,quota_usage"})
             return (data.get("data") or [{}])[0]
         except InstagramError as exc:
@@ -136,6 +178,7 @@ class Instagram:
         return info
 
     def post_reel(self, video_url: str, caption: str) -> dict:
+        self.resolve_user_id()
         cid = self.create_container(video_url, caption)
         self.wait_ready(cid)
         return self.publish(cid)

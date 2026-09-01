@@ -95,8 +95,8 @@ class Config:
     def validate_for_publish(self) -> list[str]:
         """Yayinlamadan once eksik olanlari dondurur (bos liste = hazir)."""
         missing = []
-        if not self.ig_user_id:
-            missing.append("IG_USER_ID")
+        # IG_USER_ID bilerek zorunlu degil: bos birakilirsa
+        # Instagram.resolve_user_id() tokenden bulur.
         if not self.ig_token:
             missing.append("IG_ACCESS_TOKEN")
         if self.host_mode == "release" and not self.gh_repo:
