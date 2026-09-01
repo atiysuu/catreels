@@ -1,0 +1,8 @@
+.env
+out/
+__pycache__/
+*.pyc
+.venv/
+venv/
+assets/music/*
+!assets/music/.gitkeep
