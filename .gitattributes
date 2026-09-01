@@ -1,0 +1,14 @@
+# Bu depo Ubuntu uzerinde (GitHub Actions) calisiyor. Satir sonlarini
+# katkida bulunanin yerel git ayarina birakmiyoruz: depoda her zaman LF.
+* text=auto eol=lf
+
+# Ikili dosyalar donusturulmemeli
+*.mp4  binary
+*.mp3  binary
+*.m4a  binary
+*.aac  binary
+*.wav  binary
+*.ogg  binary
+*.jpg  binary
+*.png  binary
+*.ttf  binary
