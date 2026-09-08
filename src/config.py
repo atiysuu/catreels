@@ -7,6 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "out"
 STATE = ROOT / "state"
 MUSIC = ROOT / "assets" / "music"
+SFX = ROOT / "assets" / "sfx"
 
 
 def _bool(name: str, default: bool = False) -> bool:
@@ -136,4 +137,5 @@ def load() -> Config:
     OUT.mkdir(exist_ok=True)
     STATE.mkdir(exist_ok=True)
     MUSIC.mkdir(parents=True, exist_ok=True)
+    SFX.mkdir(parents=True, exist_ok=True)
     return Config()

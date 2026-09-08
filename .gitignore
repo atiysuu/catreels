@@ -9,5 +9,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-assets/music/*
-!assets/music/.gitkeep
+# Muzik ve efekt dosyalari repoya GIRER (CI'nin erisebilmesi icin).
+# Buradaki desen sadece yanlislikla kalan gecici dosyalari eler.
+assets/music/_*
+assets/sfx/_*

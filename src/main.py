@@ -14,7 +14,7 @@ import shutil
 import sys
 import traceback
 
-from . import assemble, config, host, ideas, log
+from . import assemble, audio, config, host, ideas, log
 from .backends import ai_video, free_motion
 from .instagram import Instagram, InstagramError
 from .pollinations import Pollinations
@@ -134,11 +134,12 @@ def run(args) -> int:
     padded = assemble.ensure_min_duration(joined, workdir / "padded.mp4",
                                           MIN_SECONDS + 1.0)
     hooked = assemble.overlay_hook(padded, workdir / "hooked.mp4", cfg, idea["hook"])
-    music = assemble.pick_music(cfg)
-    if music:
-        log.info(f"muzik: {music.name}")
+    vid_len = assemble.probe_duration(hooked)
+    spec = audio.plan(cfg, vid_len)
+    log.info(f"ses: {audio.describe(spec)}")
+    track = audio.build_track(cfg, workdir / "audio.m4a", vid_len, spec)
     final = workdir / f"reel-{stamp}.mp4"
-    assemble.finalize(hooked, final, cfg, music)
+    assemble.finalize(hooked, final, cfg, track)
 
     secs = check_duration(final)
     log.info(f"cikti: {assemble.describe(final)}")

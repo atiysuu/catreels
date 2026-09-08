@@ -293,10 +293,13 @@ def cfg_music_dir(cfg):
 
 
 def finalize(src: pathlib.Path, dest: pathlib.Path, cfg,
-             music: pathlib.Path | None) -> pathlib.Path:
-    """Reels spesifikasyonuna gore son cikti: H.264 High + AAC + faststart."""
+             audio: pathlib.Path | None) -> pathlib.Path:
+    """Reels spesifikasyonuna gore son cikti: H.264 High + AAC + faststart.
+
+    `audio` audio.build_track() tarafindan uretilmis, muzik + efektleri
+    zaten karistirilmis tek parcadir. None ise sessiz kanal eklenir.
+    """
     duration = probe_duration(src)
-    fade_out_at = max(0.0, duration - 1.2)
 
     common_v = [
         "-c:v", "libx264", "-profile:v", "high", "-level", "4.1",
@@ -305,20 +308,17 @@ def finalize(src: pathlib.Path, dest: pathlib.Path, cfg,
         "-movflags", "+faststart",
     ]
 
-    if music and music.exists():
+    if audio and audio.exists():
         args = [
-            "-i", str(src),
-            "-stream_loop", "-1", "-i", str(music),
-            "-filter_complex",
-            f"[1:a]afade=t=in:st=0:d=0.8,afade=t=out:st={fade_out_at:.2f}:d=1.2,"
-            f"loudnorm=I=-14:TP=-1.5:LRA=11,aformat=sample_rates=48000:channel_layouts=stereo[a]",
-            "-map", "0:v", "-map", "[a]", "-shortest",
-            *common_v, "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
+            "-i", str(src), "-i", str(audio),
+            "-map", "0:v", "-map", "1:a", "-shortest",
+            *common_v, "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
             str(dest),
         ]
-        run(args, what="muzikle son kodlama")
+        run(args, what="sesli son kodlama")
     else:
-        log.warn("assets/music bos -- sessiz ses kanali eklenerek devam ediliyor")
+        log.warn("ses kaynagi yok (assets/music ve assets/sfx bos) -- "
+                 "SESSIZ video uretiliyor, dagitim ciddi dusecek")
         args = [
             "-i", str(src),
             "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
