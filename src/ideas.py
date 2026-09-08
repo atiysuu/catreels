@@ -1,7 +1,10 @@
-"""Her calismada yeni bir kedi konsepti uretir.
+"""Her calismada yeni bir kedi DRAMASI uretir.
 
-Once yerel bir tohum havuzundan rastgele bir cekirdek fikir secilir, sonra
-metin modeli bunu tam bir cekim listesine + Turkce aciklamaya genisletir.
+Tasarim degisikligi: eskiden cekimler ayni hareketin kucuk adimlariydi
+(dans eden kedi, poz poz). Bu guvenliydi ama izleyiciyi tutmuyordu.
+Artik her Reel 6 vurusluk bir mikro-drama: kanca -> tirmanma -> twist.
+Ilk kare en carpici olan; merak bosluu ilk saniyede aciliyor.
+
 Model erisilemezse tamamen yerel sablonla devam edilir; hat asla durmaz.
 """
 import json
@@ -10,167 +13,186 @@ import random
 from . import log
 from .textgen import TextGenError, concept_json
 
+# Her tema, ICINDE DONUS OLAN bir premis havuzu. Duz durum degil, olay.
 THEMES = {
-    "dans": [
-        "iki kedi disko toplari altinda senkronize dans ediyor",
-        "smokinli bir kedi balo salonunda tek basina vals yapiyor",
-        "sokak kedisi breakdance yapiyor, etrafinda hayran kediler",
-        "kedi 1980ler aerobik dersinde bandana takmis dans ediyor",
-        "yagmurda semsiyeyle tap dans yapan kedi",
+    "aldatma": [
+        "kedi eve erken gelir, dolapta baska bir kedi bulur",
+        "kedi sevgilisini en yakin arkadasiyla kafede yakalar",
+        "kedi telefonda mesajlari gorur, sevgilisi yalan soyler ama fotograf ortaya cikar",
+        "kedi dogum gunu suprizi hazirlar, sevgilisi baskasiyla gelir",
+        "kedi cift terapisine gider, terapist de sevgilisinin sevgilisi cikar",
     ],
-    "ask": [
-        "iki kedi mum isiginda spagetti paylasiyor",
-        "kedi sevgilisine cati katinda gul uzatiyor",
-        "yagmurda ayni semsiye altinda birbirine sokulan iki kedi",
-        "kedi deniz kenarinda gun batiminda evlenme teklif ediyor",
-        "sinemada patilerini tutan kedi cifti",
+    "sevgili": [
+        "kedi evlenme teklif eder, yuzuk kutusu bos cikar",
+        "kedi ilk bulusmaya gider, karsisina cocuklugundan tanidigi kedi cikar",
+        "kedi sevgilisine surpriz yapar, kapiyi acan baska biri olur",
+        "kedi yagmurda saatlerce bekler, sevgilisi gelmez ama not birakmistir",
+        "kedi ayrilmaya karar verir, tam soyleyecekken sevgilisi ona teklif eder",
     ],
-    "karikoca": [
-        "kedi karisi kocasini gece yarisi buzdolabi basinda yakaliyor",
-        "kedi cift televizyon kumandasi icin kavga ediyor",
-        "kedi koca sabah kahvaltisini yakiyor, karisi kaslarini kaldiriyor",
-        "kedi cift mobilya kurmaya calisiyor ve pes ediyor",
-        "kedi karisi alisveris torbalariyla eve giriyor, koca faturaya bakiyor",
+    "kovulma": [
+        "kedi patronuna kahve doker, kovulur, ertesi gun patronun koltuguna oturur",
+        "kedi kovulur, cikarken tum ofis ayaga kalkip alkislar",
+        "kedi zam ister, patron guler, kedi rakip sirkete gecer",
+        "kedi mesai sonrasi yakalanir, aslinda sirketi kurtaran raporu yaziyordur",
+        "kedi kovulur, bir yil sonra ayni ofise patron olarak doner",
     ],
-    "arkadas": [
-        "dort kedi kanepede pizza yiyip mac izliyor",
-        "kedi arkadaslar kamp atesinde korkunc hikaye anlatiyor",
-        "kedi grubu karaoke yapiyor, biri mikrofonu birakmiyor",
-        "kedi arkadaslar market arabasiyla yokus asagi kayiyor",
-        "kedi cetesi gece yarisi mutfakta gizlice pasta yiyor",
+    "zengin": [
+        "sokak kedisi piyango kazanir, ertesi gun limuzinle mahalleye doner",
+        "fakir kedi, kendisini asagilayan kediyi luks restoranda garson gorur",
+        "kedi caydan para cikarir, mahalledeki herkese ziyafet ceker",
+        "kedi eski paltosuyla luks magazaya alinmaz, kartla geri doner",
+        "kedi mirasi reddeder, sokakta buyuten kediye verir",
+    ],
+    "intikam": [
+        "kedi surekli alay edilir, yetenek yarismasinda sahneye cikar",
+        "kedi balik calan komsuyu kurar, tuzagi kendi kurdugu tuzak olur",
+        "kedi kucuk gorulur, mahalle kavgasinda herkesi sasirtir",
+        "kedi disari atilir, sahibi onu bulmak icin sehri arar",
+    ],
+    "komik": [
+        "kedi diyet yapacagini ilan eder, gece buzdolabinda yakalanir",
+        "kedi kopek taklidi yapar, gercek kopek gelir",
+        "kedi robot supurgeye biner, evin duzenini bozar",
+        "kedi karaoke yapar, mikrofonu kimseye vermez",
     ],
 }
 
 # Gorsel dil: her cekimde ayni kalmali ki kedi ayni kedi gorunsun.
 STYLE_POOL = [
-    "cinematic 3D animated film still, Pixar-quality fur shading, soft rim light, shallow depth of field",
-    "hyperreal photograph, 85mm lens, warm golden hour light, creamy bokeh, photorealistic cat fur",
-    "cozy stop-motion felt puppet look, tilt-shift miniature set, practical lighting",
-    "vibrant 2D-3D hybrid cartoon, bold outlines, saturated palette, studio lighting",
+    "cinematic 3D animated film still, Pixar-quality fur shading, dramatic rim light, shallow depth of field",
+    "hyperreal photograph, 85mm lens, moody cinematic lighting, creamy bokeh, photorealistic cat fur",
+    "cinematic 3D animation, telenovela lighting with warm key and cool shadows, film grain",
+    "vibrant stylised 3D cartoon, bold shapes, saturated palette, strong key light",
 ]
 
-SYSTEM = """You are a viral short-form video director specialising in cute AI cat Reels.
-You return ONLY a JSON object. No prose, no markdown fence.
+SYSTEM = """You write viral vertical short-form CAT DRAMAS. Think telenovela, but every
+character is a cat. You return ONLY a JSON object. No prose, no markdown fence.
+
+THE ONE RULE THAT MATTERS: the viewer decides in 1.5 seconds whether to keep watching.
+So beat 1 is never a calm establishing shot - it is the most arresting image in the
+whole story, dropped in cold. Start in the middle of the drama, not before it.
+
+Structure the beats as a micro-drama, not as one continuous movement:
+  beat 1        the hook - the shocking / funny image that opens a question
+  beats 2..n-2  escalation - the situation gets worse or stranger
+  beat n-1      the turn - something is revealed or reversed
+  beat n        the payoff - reaction, comeuppance, or punchline
 
 Rules:
-- All visual text MUST be in English (image models are trained on English).
-- The caption MUST be in Turkish, warm and playful, 1-2 short sentences, at most one emoji.
-- The hook MUST be in Turkish, AT MOST 26 characters including spaces. It is burned
-  onto the first seconds of the video, so it has to fit on screen: 3-4 short words,
-  no emoji, no punctuation at the end. Think of it as a thumbnail headline.
-- The character field is the single most important one: one dense English sentence describing
-  the cat(s) so precisely (breed, fur colour and pattern, eye colour, body shape,
-  clothing/accessory) that a text-to-image model draws the SAME cat every time.
-  Never change it between shots.
-- Each shot action describes ONE clear physical pose or movement, in English, 8-18 words.
-  Consecutive shots must be small steps of the same continuous motion, not unrelated scenes.
-- Keep the whole thing wholesome and funny. No text or letters inside the image.
+- All visual text MUST be in English (image and video models are trained on English).
+- The caption MUST be in Turkish, and it must invite a reply: a question, a hot take,
+  or a "bunu yasayan var mi" energy. 1-2 short sentences, at most one emoji.
+- The hook MUST be in Turkish, AT MOST 26 characters including spaces. It is burned onto
+  the first seconds of the video, so it must fit. Write it as an open loop, not a summary:
+  "Dolapta biri vardi" beats "Kedi sevgilisini aldatti". No emoji, no ending punctuation.
+- The character field is the single most important one: one dense English sentence
+  describing the cat(s) so precisely (breed, fur colour and pattern, eye colour, body
+  shape, clothing/accessory) that the model draws the SAME cat every time. If there are
+  two cats, describe BOTH distinctly in that one sentence. Never change it between beats.
+- Each beat's action is ONE clear physical moment with visible emotion, in English,
+  10-20 words. Name who is doing what, and show feeling through body language and face -
+  no thought bubbles, no speech, no text in the image.
+- Cats only. Keep it playful soap-opera drama, never cruel and never graphic.
 """
 
-USER_TMPL = """Build a {shots}-shot vertical Reel concept.
+USER_TMPL = """Write a {shots}-beat vertical cat drama.
 
 Theme: {theme}
-Seed idea: {seed_idea}
-Visual style to keep in every shot: {style}
-Avoid repeating any of these recent titles: {recent}
+Premise to dramatise: {seed_idea}
+Visual style to keep in every beat: {style}
+Do not repeat any of these recent titles: {recent}
 
 Return exactly this JSON shape:
 {{
   "title": "short English slug-like title",
-  "hook": "Turkish, max 26 characters, burned onto the video",
-  "character": "one dense English sentence, the same cat(s) in every shot",
+  "hook": "Turkish, max 26 characters, an open loop, burned onto the video",
+  "character": "one dense English sentence; if two cats, both described distinctly",
   "setting": "one English sentence describing the location and lighting",
-  "shots": [
-    {{"action": "English, one clear pose or movement", "camera": "English camera note, e.g. medium shot, low angle"}}
+  "beats": [
+    {{"action": "English, one clear dramatic moment with visible emotion",
+      "camera": "English camera note, e.g. low angle close-up, wide shot"}}
   ],
-  "caption": "Turkish caption, playful, 1-2 sentences, max one emoji",
+  "caption": "Turkish caption that invites a reply, 1-2 sentences, max one emoji",
   "hashtags": ["#kedi", "#cat", "8-14 mixed Turkish and English tags"]
 }}
 
-The shots array must contain exactly {shots} items."""
+The beats array must contain exactly {shots} items, following hook -> escalation ->
+turn -> payoff."""
 
 
-# --- yerel yedek havuzlari (metin modeli hic calismasa bile cesitlilik) ----
+# --- yerel yedek havuzlari (metin modeli hic calismasa bile drama cikar) ----
 
 CHARACTERS = [
-    "a chubby orange tabby cat with white chest fur, huge round green eyes, tiny pink nose, wearing a small red bow tie",
-    "a fluffy grey British Shorthair cat with copper eyes, round cheeks, wearing a tiny denim jacket",
-    "a sleek black cat with bright yellow eyes and one white paw, wearing gold hoop earrings",
-    "a cream Ragdoll cat with sapphire blue eyes and long silky fur, wearing a knitted scarf",
-    "a small calico kitten with mismatched eyes, orange and black patches, wearing oversized round glasses",
-    "a plump Scottish Fold cat with folded ears, amber eyes, wearing a chef apron",
+    ("a chubby orange tabby tomcat with white chest fur, huge round green eyes and a tiny "
+     "red bow tie, and a slender white cat with long silky fur and ice-blue eyes wearing "
+     "a thin gold chain"),
+    ("a sleek black cat with bright yellow eyes and one white paw, in a rumpled office "
+     "shirt, and a large grey British Shorthair with copper eyes in an expensive suit"),
+    ("a small scruffy calico street cat with mismatched eyes and a torn ear, and a "
+     "pampered fluffy white Persian with a diamond collar"),
+    ("a cream Ragdoll cat with sapphire blue eyes wearing a knitted scarf, and a ginger "
+     "tabby with a crooked whisker and a leather jacket"),
 ]
 
 SETTINGS = {
-    "dans": [
-        "a neon-lit 1980s disco floor, mirror ball throwing light across the room",
-        "a grand ballroom with chandeliers and polished marble floor",
-        "a rain-slicked night street under a glowing lamp post",
-    ],
-    "ask": [
-        "a rooftop terrace at sunset, string lights and a small table for two",
-        "a candlelit italian restaurant, warm amber glow, soft shadows",
-        "a quiet beach at golden hour, gentle waves in the background",
-    ],
-    "karikoca": [
-        "a cosy kitchen at midnight, only the open fridge lighting the room",
-        "a lived-in living room with a worn sofa and a flickering television",
-        "a cluttered bedroom in the morning, sunlight through half-open blinds",
-    ],
-    "arkadas": [
-        "a messy living room full of snacks, game controllers and blankets",
-        "a campsite at night around a crackling fire, sparks rising",
-        "a bright kitchen at 2am, cake crumbs everywhere",
-    ],
+    "aldatma": ["a dim apartment hallway at night, a single warm lamp and a half-open door",
+                "a rainy city cafe window seat at dusk, neon reflections on wet glass"],
+    "sevgili": ["a rooftop terrace at sunset, string lights and a small table for two",
+                "a quiet beach at golden hour, long shadows on wet sand"],
+    "kovulma": ["a grey open-plan office at night, one desk lamp still on",
+                "a glass corner office at sunrise, city skyline behind"],
+    "zengin": ["a marble hotel lobby with chandeliers and gold trim",
+               "a narrow backstreet at night, then bright shop windows"],
+    "intikam": ["a bright talent-show stage with a single spotlight and dark audience",
+                "a cluttered neighbourhood courtyard at noon, harsh sunlight"],
+    "komik": ["a cosy kitchen at midnight, only the open fridge lighting the room",
+              "a messy living room full of snacks and blankets"],
 }
 
-# Ekrana basilan kanca: en fazla 26 karakter, yoksa kadraja sigmiyor.
 HOOKS = {
-    "dans": ["Bu ritme dayanamadi", "Kedi dansi basliyor", "Sesi acmadan izleme"],
-    "ask": ["Bu kadar tatli olamaz", "Ask boyle bir sey", "Kalbim eridi"],
-    "karikoca": ["Her evde bu sahne", "Evli olan anlar", "Tanidik geldi mi"],
-    "arkadas": ["Grupta boyle biri var", "Kaos basliyor", "Bizim grup aynen bu"],
+    "aldatma": ["Dolapta biri vardi", "Kapiyi acmamaliydim", "Fotografi gordum"],
+    "sevgili": ["Kutu bostu", "Saatlerce bekledi", "Tam soyleyecekti"],
+    "kovulma": ["Bugun kovuldum", "Patron guldu", "Bir yil sonra dondu"],
+    "zengin": ["Dun sokaktaydi", "Iceri almadilar", "Bileti cebindeydi"],
+    "intikam": ["Hep guluyorlardi", "Sahneye cikti", "Tuzak geri teptii"],
+    "komik": ["Diyet bugun basladi", "Buzdolabinda yakalandi", "Mikrofonu birakmadi"],
 }
 
 CAPTIONS = {
-    "dans": ["Bu ritme dayanamadim.", "Kedi dans ederse boyle eder.",
-             "Sesi ac, ayaklarin duramayacak."],
-    "ask": ["Bu kadar tatli olmasi yasak olmali.", "Ask dedigin tam olarak bu.",
-            "Kalbim eridi resmen."],
-    "karikoca": ["Her evde yasanan sahne.", "Bu tartismayi hepimiz biliyoruz.",
-                 "Evli olan anlar."],
-    "arkadas": ["Arkadas grubunda mutlaka boyle biri var.",
-                "Kaosun tanimi bu olsa gerek.", "Bizim grup aynen boyle."],
+    "aldatma": ["Siz olsaniz ne yapardiniz?", "Bu sahneyi yasayan var mi?"],
+    "sevgili": ["Bu kadar tatli olmasi yasak olmali.", "Siz hic bu kadar beklediniz mi?"],
+    "kovulma": ["Herkesin bir patron hikayesi var. Seninki ne?", "Bu son var ya, tam hak etti."],
+    "zengin": ["Kimseyi kucumsemeyin derler ya, iste tam bu.", "Sonu tahmin ettiniz mi?"],
+    "intikam": ["En guzel cevap bu olsa gerek.", "Gulenlerin yuzunu gordunuz mu?"],
+    "komik": ["Bu kedi hepimiziz.", "Diyet kac gun surdu sizce?"],
 }
 
 BEATS = [
-    "standing still, looking at the camera, tail curled",
-    "leaning to the left, one paw raised",
-    "mid-motion, both paws up, joyful expression",
-    "spinning, fur and whiskers in motion",
-    "leaning to the right, head tilted",
-    "jumping, all paws off the ground",
-    "landing softly, big satisfied smile",
-    "sitting down, blinking slowly at the camera",
+    "the first cat freezes in the doorway, eyes wide, one paw still on the handle",
+    "the second cat looks up sharply, caught, ears flattening in panic",
+    "the first cat steps back slowly, tail low, jaw tight with disbelief",
+    "the second cat reaches out a pleading paw, the first cat turns away",
+    "the first cat lifts its chin, expression hardening into calm resolve",
+    "the first cat walks out into the light, head high, not looking back",
 ]
 
-CAMERAS = ["medium shot, eye level", "close-up, low angle",
-           "wide shot, slight high angle", "medium close-up, eye level"]
+CAMERAS = ["low angle close-up", "medium shot, eye level", "wide shot, slight high angle",
+           "extreme close-up on the face", "over-the-shoulder medium shot"]
 
 
 def _fallback(theme: str, seed_idea: str, style: str, shots: int) -> dict:
-    """Metin modeli olmadan da calisan, kendi icinde cesitli yedek konsept."""
+    """Metin modeli olmadan da calisan, kendi icinde cesitli yedek drama."""
     return {
         "title": seed_idea[:40],
-        "hook": random.choice(HOOKS.get(theme, HOOKS["dans"])),
+        "hook": random.choice(HOOKS.get(theme, HOOKS["komik"])),
         "character": random.choice(CHARACTERS),
-        "setting": random.choice(SETTINGS.get(theme, SETTINGS["dans"])),
-        "shots": [{"action": BEATS[i % len(BEATS)], "camera": CAMERAS[i % len(CAMERAS)]}
+        "setting": random.choice(SETTINGS.get(theme, SETTINGS["komik"])),
+        "beats": [{"action": BEATS[i % len(BEATS)], "camera": CAMERAS[i % len(CAMERAS)]}
                   for i in range(shots)],
-        "caption": random.choice(CAPTIONS.get(theme, CAPTIONS["dans"])),
+        "caption": random.choice(CAPTIONS.get(theme, CAPTIONS["komik"])),
         "hashtags": ["#kedi", "#cat", "#catsofinstagram", "#kedistagram", "#aicat",
-                     "#yapayzeka", "#reels", "#kedivideolari", "#funnycats", "#cute",
-                     "#kedisevgisi", "#catlovers"],
+                     "#yapayzeka", "#reels", "#kedivideolari", "#drama", "#kedidrama",
+                     "#funnycats", "#catlovers"],
         "_fallback": True,
     }
 
@@ -190,7 +212,7 @@ def generate(client, cfg, history: list[str]) -> dict:
         idea = _fallback(theme, seed_idea, style, cfg.shots)
 
     idea = _normalise(idea, theme, seed_idea, style, cfg.shots)
-    log.info(f"konsept: [{theme}] {idea['title']} ({len(idea['shots'])} cekim)")
+    log.info(f"drama: [{theme}] {idea['title']} -- kanca: {idea['hook']!r}")
     return idea
 
 
@@ -203,26 +225,27 @@ def _normalise(idea: dict, theme: str, seed_idea: str, style: str, want: int) ->
         "style": style,
         "title": str(idea.get("title") or base["title"])[:80],
         # Kanca ekrana basiliyor: model uzun yazarsa kadraja sigmasi icin kirp.
-        "hook": str(idea.get("hook") or base["hook"]).strip().rstrip(".!")[:30],
+        "hook": str(idea.get("hook") or base["hook"]).strip().rstrip(".!?")[:30],
         "character": str(idea.get("character") or base["character"]),
         "setting": str(idea.get("setting") or base["setting"]),
         "caption": str(idea.get("caption") or base["caption"]),
         "used_fallback": bool(idea.get("_fallback")),
     }
 
-    shots = idea.get("shots") or []
+    # Model "beats" yerine "shots" dondurebilir; ikisini de kabul et.
+    raw = idea.get("beats") or idea.get("shots") or []
     clean = []
-    for s in shots:
+    for s in raw:
         if isinstance(s, dict) and s.get("action"):
             clean.append({"action": str(s["action"]),
                           "camera": str(s.get("camera") or "medium shot")})
         elif isinstance(s, str) and s.strip():
             clean.append({"action": s.strip(), "camera": "medium shot"})
-    # Eksikse yedekten tamamla, fazlaysa kirp.
     i = 0
     while len(clean) < want:
-        clean.append(base["shots"][i % len(base["shots"])])
+        clean.append(base["beats"][i % len(base["beats"])])
         i += 1
+    # Hat boyunca "shots" adiyla tasiniyor (backend'ler bu anahtari kullaniyor).
     out["shots"] = clean[:want]
 
     tags = idea.get("hashtags") or base["hashtags"]
@@ -231,11 +254,27 @@ def _normalise(idea: dict, theme: str, seed_idea: str, style: str, want: int) ->
     return out
 
 
+def story_beats(idea: dict, n: int) -> list[dict]:
+    """Ucretli yol icin hikayeyi tasiyan n vurusu secer.
+
+    Ilk n vurusu almak dramayi olduruyordu: 6 vuruslu bir hikayeden ilk 2'sini
+    almak sadece kurulumu verir, twist'i hic gostermez. Bunun yerine kancayi ve
+    finali her zaman koruyup arasini esit araliklarla dolduruyoruz.
+    """
+    beats = idea["shots"]
+    if n >= len(beats):
+        return beats
+    if n == 1:
+        return [beats[0]]
+    step = (len(beats) - 1) / (n - 1)
+    return [beats[round(i * step)] for i in range(n)]
+
+
 def shot_prompt(idea: dict, shot: dict) -> str:
-    """Tek bir kareyi ureten tam gorsel istemi."""
+    """Tek bir vurusu ureten tam gorsel istemi."""
     return (
         f"{idea['character']}. {shot['action']}. "
         f"Scene: {idea['setting']}. Camera: {shot['camera']}. "
-        f"{idea['style']}. Vertical 9:16 composition, subject fully in frame, "
-        f"no text, no watermark, no letters, no signature."
+        f"{idea['style']}. Vertical 9:16 composition, subjects fully in frame, "
+        f"expressive faces, no text, no watermark, no letters, no speech bubbles."
     )

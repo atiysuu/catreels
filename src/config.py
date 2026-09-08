@@ -116,8 +116,10 @@ class Config:
             for k in ("r2_endpoint", "r2_bucket", "r2_access_key", "r2_secret_key", "r2_public_base"):
                 if not getattr(self, k):
                     missing.append(k.upper())
-        if self.backend == "pollinations" and not self.pollinations_key:
-            missing.append("POLLINATIONS_API_KEY")
+        # VIDEO_BACKEND=pollinations icin anahtar bilerek ZORUNLU degil:
+        # main.produce_video() ucretli yol her ne sebeple duserse (anahtar yok,
+        # bakiye bitti, model dustu) ucretsize geciyor. Burada sert hata vermek
+        # bakiye bittigi gun tum yayini durdururdu.
         return missing
 
 

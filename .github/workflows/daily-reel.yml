@@ -18,8 +18,8 @@ on:
       backend:
         description: "Video yolu"
         type: choice
-        options: [free, pollinations]
-        default: free
+        options: [pollinations, free]
+        default: pollinations
       shots:
         description: "Cekim sayisi (bos birakin = src/config.py varsayilani)"
         default: ""
@@ -60,7 +60,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           # --- gorsel/video ---
           POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
-          VIDEO_BACKEND: ${{ inputs.backend || 'free' }}
+          # pollinations = Seedance. Bakiye yoksa kod otomatik olarak
+          # ucretsiz gorsel yoluna duser, yayin durmaz.
+          VIDEO_BACKEND: ${{ inputs.backend || 'pollinations' }}
           # Bos gecilirse src/config.py'deki varsayilan gecerli olur.
           REEL_SHOTS: ${{ inputs.shots }}
           # --- Instagram ---

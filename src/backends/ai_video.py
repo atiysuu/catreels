@@ -41,11 +41,15 @@ def _normalise_clip(src: pathlib.Path, dest: pathlib.Path, cfg) -> pathlib.Path:
 
 def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     seed = new_seed(cfg)
-    # Video pahali: her cekim icin klip uretmek maliyeti katliyor. VIDEO_CLIPS
-    # cekim sayisindan bagimsiz tutulur -- 6 cekimlik bir konseptten 2 klip
-    # uretmek 16sn/0.40 $ demek, 6 klip 48sn/1.20 $ olurdu.
+    # Video pahali: her vurus icin klip uretmek maliyeti katliyor. VIDEO_CLIPS
+    # vurus sayisindan bagimsiz -- 6 vurusluk konseptten 2 klip 16sn/0.40 $,
+    # 6 klip ise 48sn/1.20 $ olurdu.
+    #
+    # Ama ILK n vurusu almak dramayi olduruyor: sadece kurulum gelir, twist
+    # hic gorunmez. story_beats() kancayi ve finali koruyup arasini esit
+    # araliklarla dolduruyor.
     n = max(1, min(len(idea["shots"]), cfg.video_clips))
-    picks = idea["shots"][:n]
+    picks = ideas.story_beats(idea, n)
 
     cost = estimate_cost(cfg, len(picks))
     log.info(f"ucretli yol: model={cfg.video_model}, {len(picks)} klip x "

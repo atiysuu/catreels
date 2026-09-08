@@ -63,7 +63,10 @@ def check_duration(path: pathlib.Path) -> float:
 
 def produce_video(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     """Secilen yolu dener; ucretli yol patlarsa ucretsize duser."""
-    if cfg.backend == "pollinations":
+    if cfg.backend == "pollinations" and not cfg.pollinations_key:
+        log.warn("VIDEO_BACKEND=pollinations secili ama POLLINATIONS_API_KEY yok; "
+                 "ucretsiz yola geciliyor")
+    elif cfg.backend == "pollinations":
         try:
             return ai_video.produce(client, cfg, idea, workdir)
         except Exception as exc:  # kredi bitti, model dustu, vs.

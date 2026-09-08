@@ -7,5 +7,14 @@
     "seconds": 12.3,
     "file": "out\\20260908-120037\\reel-20260908-120037.mp4",
     "published": false
+  },
+  {
+    "stamp": "20260908-131601",
+    "title": "midnight-cake-heist",
+    "theme": "arkadas",
+    "backend": "free",
+    "seconds": 15.5,
+    "file": "out\\20260908-131601\\reel-20260908-131601.mp4",
+    "published": false
   }
 ]
