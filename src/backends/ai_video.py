@@ -41,8 +41,10 @@ def _normalise_clip(src: pathlib.Path, dest: pathlib.Path, cfg) -> pathlib.Path:
 
 def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     seed = new_seed(cfg)
-    # Video pahali: her cekimi degil, en guclu birkacini uret.
-    n = max(1, min(len(idea["shots"]), cfg.shots))
+    # Video pahali: her cekim icin klip uretmek maliyeti katliyor. VIDEO_CLIPS
+    # cekim sayisindan bagimsiz tutulur -- 6 cekimlik bir konseptten 2 klip
+    # uretmek 16sn/0.40 $ demek, 6 klip 48sn/1.20 $ olurdu.
+    n = max(1, min(len(idea["shots"]), cfg.video_clips))
     picks = idea["shots"][:n]
 
     cost = estimate_cost(cfg, len(picks))
@@ -58,7 +60,7 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
         raw = raw_dir / f"v{i:02d}.mp4"
         try:
             client.video(prompt, raw, seed=seed, seconds=cfg.video_clip_seconds,
-                         aspect="9:16")
+                         aspect="9:16", width=cfg.width, height=cfg.height)
             log.info(f"  klip {i:02d} hazir ({raw.stat().st_size // 1024}KB)")
         except PollinationsError as exc:
             log.warn(f"  klip {i:02d} uretilemedi: {exc}")

@@ -137,10 +137,15 @@ kırmızı yanar — sessizce durmasındansa uyarması daha iyi.
 Günlük iş akışı `state/history.json` dosyasını commit'lediği için depo sürekli
 aktif kalır; bu yan etki bilinçlidir.
 
-**Görseller 576×1024 geliyor.** Anonim katmanın tavanı bu — ne istersen iste
-aynısını veriyor. 1080×1920'ye lanczos + `cas` + `unsharp` zinciriyle
-büyütülüyor; sonuç iyi ama native değil. Ücretsiz bir Pollinations anahtarı
-bu sınırı büyük olasılıkla kaldırır ve tek satırlık kalite artışıdır.
+**Görseller 576×1024 geliyor ve bu değişmiyor.** Dört farklı boyut istedim,
+dördünde de aynısı geldi. **Anahtar eklemek de kaldırmıyor** — anahtarlı olarak
+da test edildi, tavan aynı. Ücretsiz `flux` arka planda küçük bir modeli
+(`lykon/dreamshaper-8-lcm`) çalıştırıyor; tavan oradan geliyor.
+
+1080×1920'ye lanczos + `cas` + `unsharp` ile büyütülüyor; sonuç izlenebilir
+ama native değil. Native 1080p'nin tek yolu ücretli video modeli
+(`seedance-pro`). Anahtarın gerçek faydası hız: istek arası bekleme
+16 saniyeden 2 saniyeye düşüyor, koşu ~9 dakikadan ~2 dakikaya iniyor.
 
 **Zamanlanmış çalışmalar gecikebilir.** GitHub yoğunlukta cron'u 15+ dakika
 öteleyebilir. Dakikası dakikasına yayın gerekiyorsa VPS'e taşıyın.

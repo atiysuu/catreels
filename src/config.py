@@ -44,17 +44,26 @@ class Config:
     pollinations_key: str = field(default_factory=lambda: _str("POLLINATIONS_API_KEY"))
     image_model: str = field(default_factory=lambda: _str("IMAGE_MODEL", "flux"))
     text_model: str = field(default_factory=lambda: _str("TEXT_MODEL", "openai"))
-    video_model: str = field(default_factory=lambda: _str("VIDEO_MODEL", "wan-fast"))
-    video_clip_seconds: int = field(default_factory=lambda: _int("VIDEO_CLIP_SECONDS", 5))
+    # seedance-pro: 0.025 $/sn, 2-10sn klip, 1080p destekli -> kalite/fiyatta
+    # en iyi denge. 2 klip x 8sn = 16sn = 0.40 $/Reel (gunde 1 ile ~12 $/ay).
+    video_model: str = field(default_factory=lambda: _str("VIDEO_MODEL", "seedance-pro"))
+    video_clip_seconds: int = field(default_factory=lambda: _int("VIDEO_CLIP_SECONDS", 8))
+    # Ucretli yolda kac klip uretilecek. Cekim sayisindan ayri tutuluyor:
+    # her cekim icin klip uretmek maliyeti 3 katina cikariyordu.
+    video_clips: int = field(default_factory=lambda: _int("VIDEO_CLIPS", 2))
 
     # --- reel bicimi -------------------------------------------------------
     width: int = field(default_factory=lambda: _int("REEL_WIDTH", 1080))
     height: int = field(default_factory=lambda: _int("REEL_HEIGHT", 1920))
     fps: int = field(default_factory=lambda: _int("REEL_FPS", 30))
-    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 7))
-    shot_seconds: float = field(default_factory=lambda: float(_str("SHOT_SECONDS", "3.4")))
-    transition_seconds: float = field(default_factory=lambda: float(_str("TRANSITION_SECONDS", "0.45")))
-    morph: bool = field(default_factory=lambda: _bool("MORPH", False))
+    # 6 x 3.0sn - 5 gecis ~ 15.8sn. Reels dagitiminda belirleyici olan
+    # tamamlanma orani; 15-18sn bandi bu icerik icin en yuksegini veriyor.
+    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 6))
+    shot_seconds: float = field(default_factory=lambda: float(_str("SHOT_SECONDS", "3.0")))
+    transition_seconds: float = field(default_factory=lambda: float(_str("TRANSITION_SECONDS", "0.5")))
+    # Cekim ici gecisleri uzatir: poz degisimi kesme yerine hareket gibi okunur.
+    # Slayt hissini kiran en etkili ucretsiz ayar, bu yuzden varsayilan acik.
+    morph: bool = field(default_factory=lambda: _bool("MORPH", True))
     keyframes_per_shot: int = field(default_factory=lambda: _int("KEYFRAMES_PER_SHOT", 2))
 
     # --- Instagram ---------------------------------------------------------

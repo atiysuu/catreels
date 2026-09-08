@@ -1,4 +1,9 @@
+# Butun .env varyantlari (.env.yedek, .env.local, .env.bak ...) --
+# yedek dosyasi bir kez yanlislikla commit'lendi, GitHub gizli
+# anahtar korumasi yakaladi. Desen o yuzden genis.
 .env
+.env.*
+!.env.example
 out/
 __pycache__/
 *.pyc

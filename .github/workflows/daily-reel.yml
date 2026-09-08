@@ -21,8 +21,8 @@ on:
         options: [free, pollinations]
         default: free
       shots:
-        description: "Cekim sayisi"
-        default: "7"
+        description: "Cekim sayisi (bos birakin = src/config.py varsayilani)"
+        default: ""
 
 # Ayni anda iki calisma olmasin: ikisi de ayni release asset'ine yazar.
 concurrency:
@@ -61,7 +61,8 @@ jobs:
           # --- gorsel/video ---
           POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
           VIDEO_BACKEND: ${{ inputs.backend || 'free' }}
-          REEL_SHOTS: ${{ inputs.shots || '7' }}
+          # Bos gecilirse src/config.py'deki varsayilan gecerli olur.
+          REEL_SHOTS: ${{ inputs.shots }}
           # --- Instagram ---
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
