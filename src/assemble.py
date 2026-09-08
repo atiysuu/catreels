@@ -154,7 +154,29 @@ def build_shot_clip(frames: list[pathlib.Path], dest: pathlib.Path, cfg,
 # 2) Klipleri gecislerle birlestir
 # ---------------------------------------------------------------------------
 
-def join_clips(clips: list[pathlib.Path], dest: pathlib.Path, cfg) -> pathlib.Path:
+def _concat_hard(clips: list[pathlib.Path], dest: pathlib.Path, cfg) -> pathlib.Path:
+    """Gecissiz birlestirme -- sure tam korunur."""
+    inputs = []
+    for c in clips:
+        inputs += ["-i", str(c)]
+    n = len(clips)
+    chain = "".join(f"[{i}:v]" for i in range(n))
+    run([*inputs, "-filter_complex",
+         f"{chain}concat=n={n}:v=1:a=0,format=yuv420p[v]",
+         "-map", "[v]", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+         "-pix_fmt", "yuv420p", "-an", str(dest)],
+        what="sert kesme birlestirme")
+    return dest
+
+
+def join_clips(clips: list[pathlib.Path], dest: pathlib.Path, cfg,
+               transition: float | None = None) -> pathlib.Path:
+    """Klipleri birlestirir. transition=0 -> sert kesme (smash cut).
+
+    Gercek video yolunda gecis kullanmiyoruz: kanca ile odeme arasindaki
+    sert kesme hem dramatik olarak daha guclu, hem de sureyi kisaltmiyor --
+     2 x 4sn klip gecisle 7.5sn, sert kesmeyle tam 8.00sn ediyor.
+    """
     if not clips:
         raise FFmpegError("birlestirilecek klip yok")
     if len(clips) == 1:
@@ -162,7 +184,9 @@ def join_clips(clips: list[pathlib.Path], dest: pathlib.Path, cfg) -> pathlib.Pa
         return dest
 
     durations = [probe_duration(c) for c in clips]
-    xf = cfg.transition_seconds
+    xf = cfg.transition_seconds if transition is None else transition
+    if xf <= 0.01:
+        return _concat_hard(clips, dest, cfg)
     # Gecis, en kisa klibin yarisindan uzun olamaz.
     xf = min(xf, min(durations) / 2.2)
 

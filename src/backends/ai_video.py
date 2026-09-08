@@ -10,6 +10,14 @@ from .. import assemble, ideas, log
 from ..pollinations import PollinationsError, new_seed
 
 # Modellerin Pollen/saniye fiyatlari (bilgi amacli; canli liste /models ucunda).
+# DIKKAT: bazi modellerde fiyat COZUNURLUGE gore degisiyor. seedance-2.5
+# 480p'de 0.1028 $/sn, 720p'de 0.2312 $/sn -- iki katindan fazla.
+# Varsayilan 480p; VIDEO_RESOLUTION=720p maliyeti 2.25x yapiyor.
+PRICE_BY_RES = {
+    ("seedance-2.5", "480p"): 0.1028,
+    ("seedance-2.5", "720p"): 0.2312,
+}
+
 PRICE_PER_SEC = {
     "wan-fast": 0.01, "p-video": 0.02, "seedance-pro": 0.025,
     "minimax-h3": 0.05, "grok-video-pro": 0.07, "seedance-2.0-fast": 0.07,
@@ -20,8 +28,26 @@ PRICE_PER_SEC = {
 }
 
 
+# Modellerin dikey (9:16) istek boyutu. Modelin desteklemedigi bir cozunurluk
+# istemek ya hata veriyor ya sessizce dusuruluyor; ikisi de kotu. Cikti tuvali
+# yine 1080x1920 kalir, klipler montajda lanczos+cas ile buyutulur -- Instagram
+# 1080x1920 bekliyor ve kendi olceklemesini yapmasindansa biz yapalim.
+RES_SIZE = {"480p": (480, 854), "720p": (720, 1280), "1080p": (1080, 1920)}
+
+
+def request_size(cfg) -> tuple[int, int]:
+    return RES_SIZE.get(cfg.video_resolution, (cfg.width, cfg.height))
+
+
+def price_per_second(cfg) -> float:
+    key = (cfg.video_model, cfg.video_resolution)
+    if key in PRICE_BY_RES:
+        return PRICE_BY_RES[key]
+    return PRICE_PER_SEC.get(cfg.video_model, 0.10)
+
+
 def estimate_cost(cfg, n_clips: int) -> float:
-    return PRICE_PER_SEC.get(cfg.video_model, 0.10) * cfg.video_clip_seconds * n_clips
+    return price_per_second(cfg) * cfg.video_clip_seconds * n_clips
 
 
 def _normalise_clip(src: pathlib.Path, dest: pathlib.Path, cfg) -> pathlib.Path:
@@ -55,6 +81,11 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     log.info(f"ucretli yol: model={cfg.video_model}, {len(picks)} klip x "
              f"{cfg.video_clip_seconds}sn, tahmini ~{cost:.2f} Pollen")
 
+    rw, rh = request_size(cfg)
+    if (rw, rh) != (cfg.width, cfg.height):
+        log.info(f"  {cfg.video_model} en fazla {rw}x{rh} veriyor; "
+                 f"montajda {cfg.width}x{cfg.height}'e buyutulecek")
+
     raw_dir = workdir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
 
@@ -64,7 +95,8 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
         raw = raw_dir / f"v{i:02d}.mp4"
         try:
             client.video(prompt, raw, seed=seed, seconds=cfg.video_clip_seconds,
-                         aspect="9:16", width=cfg.width, height=cfg.height)
+                         aspect="9:16", width=rw, height=rh,
+                         resolution=cfg.video_resolution)
             log.info(f"  klip {i:02d} hazir ({raw.stat().st_size // 1024}KB)")
         except PollinationsError as exc:
             log.warn(f"  klip {i:02d} uretilemedi: {exc}")
@@ -74,4 +106,5 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     if not clips:
         raise RuntimeError("hicbir AI video klibi uretilemedi")
 
-    return assemble.join_clips(clips, workdir / "joined.mp4", cfg)
+    # Gecis yok: 2 x 4sn klip tam 8.00sn kalsin ve kanca->odeme sert kessin.
+    return assemble.join_clips(clips, workdir / "joined.mp4", cfg, transition=0)

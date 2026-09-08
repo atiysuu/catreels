@@ -4,11 +4,11 @@ on:
   schedule:
     # GitHub cron UTC calisir. Turkiye = UTC+3 (yaz saati uygulanmiyor).
     #
-    # Gunde 1 gonderi. Iki sebep: (1) ucretli video yoluna gecildiginde
-    # maliyet dogrudan siklikla carpiliyor -- gunde 3, seedance-pro'da
-    # 45 $/ay demek; (2) yeni bir hesapta gunde 3 otomatik gonderi agresif.
-    # Daha sik istersen buraya satir ekle, ama once butceyi kontrol et.
-    - cron: "0 17 * * *"   # 20:00 TR -- aksam kaydirma saati
+    # 2 gunde bir gonderi. seedance-2.5 ile 8sn Reel 0.82 $; bu siklikta
+    # ayda ~12.34 $. Daha sik istersen once butceyi kontrol et.
+    # ("*/2" ayin tek gunlerinde tetikler; ay sonunda 31->1 arka arkaya
+    # gelebilir, bilincli bir tolerans.)
+    - cron: "0 17 */2 * *"   # 20:00 TR, 2 gunde bir
   workflow_dispatch:
     inputs:
       dry_run:

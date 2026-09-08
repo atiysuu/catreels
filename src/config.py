@@ -45,10 +45,14 @@ class Config:
     pollinations_key: str = field(default_factory=lambda: _str("POLLINATIONS_API_KEY"))
     image_model: str = field(default_factory=lambda: _str("IMAGE_MODEL", "flux"))
     text_model: str = field(default_factory=lambda: _str("TEXT_MODEL", "openai"))
-    # seedance-pro: 0.025 $/sn, 2-10sn klip, 1080p destekli -> kalite/fiyatta
-    # en iyi denge. 2 klip x 8sn = 16sn = 0.40 $/Reel (gunde 1 ile ~12 $/ay).
-    video_model: str = field(default_factory=lambda: _str("VIDEO_MODEL", "seedance-pro"))
-    video_clip_seconds: int = field(default_factory=lambda: _int("VIDEO_CLIP_SECONDS", 8))
+    # seedance-2.5: 0.1028 $/sn, klip suresi TAM 4sn (min=max=4), 720p tavan,
+    # ses uretebiliyor. 2 klip x 4sn = 8sn = 0.82 $/Reel; 2 gunde bir yayinla
+    # ayda ~12.34 $. Klipler arasi gecis 0 -> tam 8.00sn ve smash cut.
+    video_model: str = field(default_factory=lambda: _str("VIDEO_MODEL", "seedance-2.5"))
+    video_clip_seconds: int = field(default_factory=lambda: _int("VIDEO_CLIP_SECONDS", 4))
+    # DIKKAT: 720p, seedance-2.5'te fiyati 2.25 katina cikariyor
+    # (0.1028 -> 0.2312 $/sn). Varsayilan bilerek 480p.
+    video_resolution: str = field(default_factory=lambda: _str("VIDEO_RESOLUTION", "480p"))
     # Ucretli yolda kac klip uretilecek. Cekim sayisindan ayri tutuluyor:
     # her cekim icin klip uretmek maliyeti 3 katina cikariyordu.
     video_clips: int = field(default_factory=lambda: _int("VIDEO_CLIPS", 2))

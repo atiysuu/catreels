@@ -161,6 +161,7 @@ class Pollinations:
     def video(self, prompt: str, dest: pathlib.Path, *, seed: int,
               seconds: int, aspect: str = "9:16",
               width: int | None = None, height: int | None = None,
+              resolution: str | None = None,
               start_image: str | None = None) -> pathlib.Path:
         params = {
             "model": self.cfg.video_model,
@@ -174,6 +175,10 @@ class Pollinations:
         if width and height:
             params["width"] = width
             params["height"] = height
+        # Bazi modellerde width/height yalnizca en-boy oranini belirliyor;
+        # gercek cozunurluk ayri parametreyle isteniyor ve FIYATI DEGISTIRIYOR.
+        if resolution:
+            params["resolution"] = resolution
         if start_image:
             params["image"] = start_image
         url = GEN_BASE + "/video/" + urllib.parse.quote(prompt, safe="") + "?" + urllib.parse.urlencode(params)
