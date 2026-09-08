@@ -57,9 +57,14 @@ def _normalise_clip(src: pathlib.Path, dest: pathlib.Path, cfg) -> pathlib.Path:
         f"crop={cfg.width}:{cfg.height},unsharp=5:5:0.4:5:5:0.0,"
         f"setsar=1,fps={cfg.fps},format=yuv420p"
     )
+    # Modelin urettigi ses KORUNUYOR. seedance-2.5 gibi sesli modellerde bu
+    # ses kullanicinin asil odedigi sey; -an ile atmak modeli anlamsiz kilardi.
+    # Sessiz modellerde ses akisi zaten yok, "-c:a aac" zararsiz.
     assemble.run(
         ["-i", str(src), "-vf", vf, "-c:v", "libx264", "-preset", "medium",
-         "-crf", "18", "-pix_fmt", "yuv420p", "-an", str(dest)],
+         "-crf", "18", "-pix_fmt", "yuv420p",
+         "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+         str(dest)],
         what=f"klip normalizasyonu ({src.name})",
     )
     return dest

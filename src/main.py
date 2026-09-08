@@ -129,13 +129,19 @@ def run(args) -> int:
     log.group("Video uretimi")
     joined = produce_video(client, cfg, idea, workdir)
 
+    # Model kendi sesini urettiyse (seedance-2.5) burada ayirilir; sonraki
+    # adimlar videodan sesi siliyor, o yuzden once cikariyoruz.
+    source_audio = assemble.extract_audio(joined, workdir / "source_audio.m4a")
+    if source_audio:
+        log.info("modelin urettigi ses korunuyor")
+
     log.group("Son kurgu")
     # Uretim butcesi cekim sayisini kirpmis olabilir; once alt siniri garanti et.
     padded = assemble.ensure_min_duration(joined, workdir / "padded.mp4",
                                           MIN_SECONDS + 1.0)
     hooked = assemble.overlay_hook(padded, workdir / "hooked.mp4", cfg, idea["hook"])
     vid_len = assemble.probe_duration(hooked)
-    spec = audio.plan(cfg, vid_len)
+    spec = audio.plan(cfg, vid_len, source_audio=source_audio)
     log.info(f"ses: {audio.describe(spec)}")
     track = audio.build_track(cfg, workdir / "audio.m4a", vid_len, spec)
     final = workdir / f"reel-{stamp}.mp4"

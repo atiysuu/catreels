@@ -21,7 +21,9 @@ AUDIO_EXT = (".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac")
 # Dramanin yayina degen anlari (toplam surenin orani olarak)
 SFX_POSITIONS = (0.04, 0.55, 0.85)
 
-MUSIC_LUFS = -16      # muzik yatagi, konusmasiz icerik icin makul
+MUSIC_LUFS = -16      # muzik yatagi tek basinayken
+MUSIC_UNDER_LUFS = -24  # model sesi varken muzik geri cekilir
+SOURCE_LUFS = -14     # modelin urettigi ses: ana katman
 
 # Efektlerde loudnorm KULLANILMIYOR: tek gecisli loudnorm bir saniyenin
 # altindaki malzemede guvenilir degil -- olcumde efektleri muzigin ALTINA
@@ -68,21 +70,32 @@ def _pick(folder: pathlib.Path, n: int = 1) -> list[pathlib.Path]:
     return random.sample(files, n)
 
 
-def plan(cfg, duration: float) -> dict:
-    """Bu Reel icin hangi seslerin nereye konacagini belirler."""
+def plan(cfg, duration: float, source_audio: pathlib.Path | None = None) -> dict:
+    """Bu Reel icin hangi seslerin nereye konacagini belirler.
+
+    Model kendi sesini uretmisse (seedance-2.5 gibi) o ses ANA katmandir ve
+    kendi efektlerimizi EKLEMEYIZ: iki ayri kedi sesi ust uste binince
+    sonuc camur oluyor. Muzik bu durumda yatak olarak altta kalir.
+    """
     from .config import MUSIC, SFX
 
     music = _pick(MUSIC, 1)
+    if source_audio is not None:
+        return {"music": music[0] if music else None, "sfx": [],
+                "source": source_audio}
+
     sfx = _pick(SFX, len(SFX_POSITIONS))
     placements = [(s, round(duration * pos, 2))
                   for s, pos in zip(sfx, SFX_POSITIONS)]
-    return {"music": music[0] if music else None, "sfx": placements}
+    return {"music": music[0] if music else None, "sfx": placements,
+            "source": None}
 
 
 def build_track(cfg, dest: pathlib.Path, duration: float, spec: dict) -> pathlib.Path | None:
     """Karisik ses parcasini uretir. Hicbir kaynak yoksa None doner."""
     music, sfx = spec["music"], spec["sfx"]
-    if not music and not sfx:
+    source = spec.get("source")
+    if not music and not sfx and not source:
         return None
 
     inputs: list[str] = []
@@ -90,17 +103,41 @@ def build_track(cfg, dest: pathlib.Path, duration: float, spec: dict) -> pathlib
     idx = 0
     fade_out_at = max(0.0, duration - 1.2)
 
+    # Model sesi varken muzik belirgin sekilde geri cekilir; yoksa one gelir.
+    music_target = MUSIC_UNDER_LUFS if source else MUSIC_LUFS
+
     music_label = None
     if music:
         inputs += ["-stream_loop", "-1", "-i", str(music)]
         parts.append(
             f"[{idx}:a]atrim=duration={duration:.3f},asetpts=PTS-STARTPTS,"
             f"afade=t=in:st=0:d=0.8,afade=t=out:st={fade_out_at:.2f}:d=1.2,"
-            f"loudnorm=I={MUSIC_LUFS}:TP=-1.5:LRA=11,"
+            f"loudnorm=I={music_target}:TP=-1.5:LRA=11,"
             f"aformat=sample_rates=48000:channel_layouts=stereo[music]"
         )
         music_label = "music"
         idx += 1
+
+    # Modelin urettigi ses: ana katman
+    if source:
+        inputs += ["-i", str(source)]
+        parts.append(
+            f"[{idx}:a]loudnorm=I={SOURCE_LUFS}:TP=-1.5:LRA=11,"
+            f"apad,atrim=duration={duration:.3f},"
+            f"aformat=sample_rates=48000:channel_layouts=stereo[src]"
+        )
+        idx += 1
+        if music_label:
+            parts.append(f"[{music_label}][src]amix=inputs=2:normalize=0:"
+                         f"duration=first,apad,atrim=duration={duration:.3f},"
+                         f"aformat=sample_rates=48000:channel_layouts=stereo[out]")
+        else:
+            parts.append(f"[src]anull[out]")
+        args = [*inputs, "-filter_complex", ";".join(parts), "-map", "[out]",
+                "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+                "-t", f"{duration:.3f}", str(dest)]
+        run(args, what="ses karisimi (model sesi + muzik)")
+        return dest
 
     sfx_labels = []
     for path, at in sfx:
@@ -196,6 +233,8 @@ def _build_simple(dest: pathlib.Path, duration: float, spec: dict) -> pathlib.Pa
 
 def describe(spec: dict) -> str:
     bits = []
+    if spec.get("source"):
+        bits.append("model sesi (ana katman)")
     if spec["music"]:
         bits.append(f"muzik={spec['music'].name}")
     if spec["sfx"]:

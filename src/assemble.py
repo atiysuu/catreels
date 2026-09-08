@@ -154,18 +154,48 @@ def build_shot_clip(frames: list[pathlib.Path], dest: pathlib.Path, cfg,
 # 2) Klipleri gecislerle birlestir
 # ---------------------------------------------------------------------------
 
+def has_audio(path: pathlib.Path) -> bool:
+    out = subprocess.run(
+        [_ffprobe_bin(), "-v", "error", "-select_streams", "a",
+         "-show_entries", "stream=index", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    )
+    return bool((out.stdout or "").strip())
+
+
+def extract_audio(src: pathlib.Path, dest: pathlib.Path) -> pathlib.Path | None:
+    """Videonun kendi sesini ayirir. Ses yoksa None doner."""
+    if not has_audio(src):
+        return None
+    run(["-i", str(src), "-vn", "-c:a", "aac", "-b:a", "192k",
+         "-ar", "48000", "-ac", "2", str(dest)], what="kaynak sesi ayirma")
+    return dest
+
+
 def _concat_hard(clips: list[pathlib.Path], dest: pathlib.Path, cfg) -> pathlib.Path:
-    """Gecissiz birlestirme -- sure tam korunur."""
+    """Gecissiz birlestirme -- sure tam korunur. Ses varsa o da birlesir."""
     inputs = []
     for c in clips:
         inputs += ["-i", str(c)]
     n = len(clips)
-    chain = "".join(f"[{i}:v]" for i in range(n))
-    run([*inputs, "-filter_complex",
-         f"{chain}concat=n={n}:v=1:a=0,format=yuv420p[v]",
-         "-map", "[v]", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-         "-pix_fmt", "yuv420p", "-an", str(dest)],
-        what="sert kesme birlestirme")
+    audio_all = all(has_audio(c) for c in clips)
+
+    if audio_all:
+        chain = "".join(f"[{i}:v][{i}:a]" for i in range(n))
+        run([*inputs, "-filter_complex",
+             f"{chain}concat=n={n}:v=1:a=1[v][a]",
+             "-map", "[v]", "-map", "[a]",
+             "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",
+             "-ar", "48000", "-ac", "2", str(dest)],
+            what="sert kesme birlestirme (sesli)")
+    else:
+        chain = "".join(f"[{i}:v]" for i in range(n))
+        run([*inputs, "-filter_complex",
+             f"{chain}concat=n={n}:v=1:a=0,format=yuv420p[v]",
+             "-map", "[v]", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+             "-pix_fmt", "yuv420p", "-an", str(dest)],
+            what="sert kesme birlestirme")
     return dest
 
 
