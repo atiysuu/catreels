@@ -1,0 +1,59 @@
+name: Hazir videoyu yayinla
+
+# Elle hazirlanmis (ya da daha once uretilmis) bir mp4'u Instagram'a atar.
+# Video URETILMEZ -- yalnizca repodaki dosya yayinlanir. Gunluk otomasyona
+# dokunmaz; Pollen harcamaz.
+on:
+  workflow_dispatch:
+    inputs:
+      video:
+        description: "Repodaki mp4 yolu (ornek: manual/reel-12sn.mp4)"
+        required: true
+      caption:
+        description: "Aciklama dosyasi (bos birakilirsa ayni ad .txt olarak aranir)"
+        default: ""
+      dry_run:
+        description: "Sadece yukle ve dogrula, Instagram'a atma"
+        type: boolean
+        default: false
+
+concurrency:
+  group: reel-publish     # gunluk is akisiyla ayni grup: ayni anda calismasinlar
+  cancel-in-progress: false
+
+permissions:
+  contents: write         # release asset yukleme
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Sistem bagimliliklari
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - run: pip install -q -r requirements.txt
+
+      - name: Yayinla
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          HOST_MODE: release
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CAP="${{ inputs.caption }}"
+          if [ -z "$CAP" ]; then CAP="${{ inputs.video }}"; CAP="${CAP%.mp4}.txt"; fi
+          echo "video: ${{ inputs.video }}  aciklama: $CAP"
+          python scripts/publish_file.py \
+            --video "${{ inputs.video }}" \
+            --caption "$CAP" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
