@@ -32,9 +32,14 @@ def _str(name: str, default: str = "") -> str:
 @dataclass
 class Config:
     # --- video uretim yolu -------------------------------------------------
+    # "pollinations" -> gercek AI video (seedance-2.5, Pollen harcar)
     # "free"         -> flux gorselleri + ffmpeg hareket (bedava, sinirsiz)
-    # "pollinations" -> gercek AI video (Pollen kredisi harcar)
-    backend: str = field(default_factory=lambda: _str("VIDEO_BACKEND", "free"))
+    #
+    # Varsayilan bilerek "pollinations": bakiye bitse bile produce_video()
+    # ucretsize dusuyor, yani riski yok. Varsayilan "free" birakilinca is
+    # akisi YAML'i ile kod celisiyordu ve yerel calistirmalar sessizce
+    # ucretsiz yola gidiyordu.
+    backend: str = field(default_factory=lambda: _str("VIDEO_BACKEND", "pollinations"))
 
     # --- Gemini (konsept metni; AI Studio ucretsiz katmani) ----------------
     gemini_api_key: str = field(default_factory=lambda: _str("GEMINI_API_KEY"))
