@@ -58,11 +58,15 @@ THEMES = {
 }
 
 # Gorsel dil: her cekimde ayni kalmali ki kedi ayni kedi gorunsun.
+# Cizgi film / Pixar secenekleri KALDIRILDI -- istenen sey gercek kedi
+# dokusuna sahip, sinematik isikta cekilmis tombik kediler.
 STYLE_POOL = [
-    "cinematic 3D animated film still, Pixar-quality fur shading, dramatic rim light, shallow depth of field",
-    "hyperreal photograph, 85mm lens, moody cinematic lighting, creamy bokeh, photorealistic cat fur",
-    "cinematic 3D animation, telenovela lighting with warm key and cool shadows, film grain",
-    "vibrant stylised 3D cartoon, bold shapes, saturated palette, strong key light",
+    "photorealistic cinematic still, 85mm lens, real fluffy cat fur with visible individual "
+    "hairs, soft window light, creamy bokeh, shallow depth of field, natural colours",
+    "hyperreal photograph, 50mm lens, moody telenovela lighting with warm key and cool "
+    "shadows, real cat fur texture, subtle film grain, shallow depth of field",
+    "photorealistic cinematic still, golden hour light through a window, real cat fur "
+    "detail, warm natural tones, gentle rim light, shallow depth of field",
 ]
 
 SYSTEM = """You write viral vertical short-form CAT DRAMAS. Think telenovela, but every
@@ -79,19 +83,24 @@ Structure the beats as a micro-drama, not as one continuous movement:
   beat n        the payoff - reaction, comeuppance, or punchline
 
 Rules:
-- All visual text MUST be in English (image and video models are trained on English).
-- The caption MUST be in Turkish, and it must invite a reply: a question, a hot take,
-  or a "bunu yasayan var mi" energy. 1-2 short sentences, at most one emoji.
-- The hook MUST be in Turkish, AT MOST 26 characters including spaces. It is burned onto
-  the first seconds of the video, so it must fit. Write it as an open loop, not a summary:
-  "Dolapta biri vardi" beats "Kedi sevgilisini aldatti". No emoji, no ending punctuation.
-- The character field is the single most important one: one dense English sentence
-  describing the cat(s) so precisely (breed, fur colour and pattern, eye colour, body
-  shape, clothing/accessory) that the model draws the SAME cat every time. If there are
-  two cats, describe BOTH distinctly in that one sentence. Never change it between beats.
-- Each beat's action is ONE clear physical moment with visible emotion, in English,
-  10-20 words. Name who is doing what, and show feeling through body language and face -
-  no thought bubbles, no speech, no text in the image.
+- EVERYTHING you write is in ENGLISH. The account is global, so avoid culture-specific
+  references, idioms and wordplay that do not travel.
+- The caption must invite a reply: a question, a hot take, or a "who else has been here"
+  energy. 1-2 short sentences, at most one emoji.
+- The hook is AT MOST 26 characters including spaces. It is burned onto the first seconds
+  of the video, so it must fit. Write it as an open loop, not a summary:
+  "Someone was in there" beats "The cat was cheating". No emoji, no ending punctuation.
+- The character field is the single most important one: one dense sentence describing the
+  cat(s) so precisely (breed, fur colour and pattern, eye colour, body shape) that the
+  model draws the SAME cat every time. If there are two cats, describe BOTH distinctly in
+  that one sentence. Never change it between beats.
+- The cats MUST be CHUBBY, round-faced and adorable -- plush cheeks, soft bellies, big
+  round eyes. They must look like REAL cats photographed on a real set: never cartoon,
+  never Pixar, never 3D render, never illustration. Do not dress them in clothes;
+  expressive faces and body language carry the drama.
+- Each beat's action is ONE clear physical moment with visible emotion, 10-20 words.
+  Name who is doing what, and show feeling through body language and face - no thought
+  bubbles, no speech, no text in the image.
 - Cats only. Keep it playful soap-opera drama, never cruel and never graphic.
 """
 
@@ -105,15 +114,15 @@ Do not repeat any of these recent titles: {recent}
 Return exactly this JSON shape:
 {{
   "title": "short English slug-like title",
-  "hook": "Turkish, max 26 characters, an open loop, burned onto the video",
+  "hook": "max 26 characters, an open loop, burned onto the video",
   "character": "one dense English sentence; if two cats, both described distinctly",
   "setting": "one English sentence describing the location and lighting",
   "beats": [
     {{"action": "English, one clear dramatic moment with visible emotion",
       "camera": "English camera note, e.g. low angle close-up, wide shot"}}
   ],
-  "caption": "Turkish caption that invites a reply, 1-2 sentences, max one emoji",
-  "hashtags": ["#kedi", "#cat", "8-14 mixed Turkish and English tags"]
+  "caption": "caption that invites a reply, 1-2 sentences, max one emoji",
+  "hashtags": ["#cat", "#cats", "8-14 English tags for a global audience"]
 }}
 
 The beats array must contain exactly {shots} items, following hook -> escalation ->
@@ -123,15 +132,14 @@ turn -> payoff."""
 # --- yerel yedek havuzlari (metin modeli hic calismasa bile drama cikar) ----
 
 CHARACTERS = [
-    ("a chubby orange tabby tomcat with white chest fur, huge round green eyes and a tiny "
-     "red bow tie, and a slender white cat with long silky fur and ice-blue eyes wearing "
-     "a thin gold chain"),
-    ("a sleek black cat with bright yellow eyes and one white paw, in a rumpled office "
-     "shirt, and a large grey British Shorthair with copper eyes in an expensive suit"),
-    ("a small scruffy calico street cat with mismatched eyes and a torn ear, and a "
-     "pampered fluffy white Persian with a diamond collar"),
-    ("a cream Ragdoll cat with sapphire blue eyes wearing a knitted scarf, and a ginger "
-     "tabby with a crooked whisker and a leather jacket"),
+    ("a very chubby round orange tabby cat with plush cheeks, a soft belly and huge round "
+     "amber eyes, and an equally chubby fluffy white cat with a rosy pink nose and big blue eyes"),
+    ("a plump grey British Shorthair with round copper eyes and thick velvety fur, and a "
+     "chubby cream Ragdoll with a fluffy tail and gentle blue eyes"),
+    ("a roly-poly ginger cat with a big round face and short legs, and a small tubby "
+     "tuxedo cat with white mittens and wide green eyes"),
+    ("a fat fluffy calico cat with soft round cheeks and warm hazel eyes, and a stocky "
+     "silver tabby with a broad face and big golden eyes"),
 ]
 
 SETTINGS = {
@@ -150,21 +158,21 @@ SETTINGS = {
 }
 
 HOOKS = {
-    "aldatma": ["Dolapta biri vardi", "Kapiyi acmamaliydim", "Fotografi gordum"],
-    "sevgili": ["Kutu bostu", "Saatlerce bekledi", "Tam soyleyecekti"],
-    "kovulma": ["Bugun kovuldum", "Patron guldu", "Bir yil sonra dondu"],
-    "zengin": ["Dun sokaktaydi", "Iceri almadilar", "Bileti cebindeydi"],
-    "intikam": ["Hep guluyorlardi", "Sahneye cikti", "Tuzak geri teptii"],
-    "komik": ["Diyet bugun basladi", "Buzdolabinda yakalandi", "Mikrofonu birakmadi"],
+    "aldatma": ["Someone was in there", "I opened the door", "I saw the photo"],
+    "sevgili": ["The box was empty", "He waited for hours", "She almost said it"],
+    "kovulma": ["I got fired today", "The boss laughed", "He came back later"],
+    "zengin": ["Yesterday he was broke", "They turned him away", "The ticket was real"],
+    "intikam": ["They all laughed", "Then he stepped up", "The trap backfired"],
+    "komik": ["The diet starts today", "Caught at midnight", "He never let go"],
 }
 
 CAPTIONS = {
-    "aldatma": ["Siz olsaniz ne yapardiniz?", "Bu sahneyi yasayan var mi?"],
-    "sevgili": ["Bu kadar tatli olmasi yasak olmali.", "Siz hic bu kadar beklediniz mi?"],
-    "kovulma": ["Herkesin bir patron hikayesi var. Seninki ne?", "Bu son var ya, tam hak etti."],
-    "zengin": ["Kimseyi kucumsemeyin derler ya, iste tam bu.", "Sonu tahmin ettiniz mi?"],
-    "intikam": ["En guzel cevap bu olsa gerek.", "Gulenlerin yuzunu gordunuz mu?"],
-    "komik": ["Bu kedi hepimiziz.", "Diyet kac gun surdu sizce?"],
+    "aldatma": ["What would you have done?", "Has this ever happened to you?"],
+    "sevgili": ["This should be illegal levels of cute.", "Ever waited this long?"],
+    "kovulma": ["Everyone has a boss story. What is yours?", "That ending though."],
+    "zengin": ["Never underestimate anyone.", "Did you see that coming?"],
+    "intikam": ["Best comeback ever?", "Did you catch their faces?"],
+    "komik": ["This cat is all of us.", "How long did your diet last?"],
 }
 
 BEATS = [
@@ -190,9 +198,9 @@ def _fallback(theme: str, seed_idea: str, style: str, shots: int) -> dict:
         "beats": [{"action": BEATS[i % len(BEATS)], "camera": CAMERAS[i % len(CAMERAS)]}
                   for i in range(shots)],
         "caption": random.choice(CAPTIONS.get(theme, CAPTIONS["komik"])),
-        "hashtags": ["#kedi", "#cat", "#catsofinstagram", "#kedistagram", "#aicat",
-                     "#yapayzeka", "#reels", "#kedivideolari", "#drama", "#kedidrama",
-                     "#funnycats", "#catlovers"],
+        "hashtags": ["#cat", "#cats", "#catsofinstagram", "#catlovers", "#funnycats",
+                     "#catdrama", "#cutecats", "#chubbycat", "#catreels", "#aicat",
+                     "#catvideos", "#catlife"],
         "_fallback": True,
     }
 
@@ -268,6 +276,50 @@ def story_beats(idea: dict, n: int) -> list[dict]:
         return [beats[0]]
     step = (len(beats) - 1) / (n - 1)
     return [beats[round(i * step)] for i in range(n)]
+
+
+def distribute_beats(idea: dict, n_clips: int) -> list[list[dict]]:
+    """6 vurusu n klibe pay eder -- her klip birden fazla sahne tasiyabilir.
+
+    story_beats() vurus SECIYORDU, yani 3 klipte hikayenin yarisi cope
+    gidiyordu. Video modeli tek uretimde sahne kesmesi yapabildigi icin
+    artik vuruslari SIKISTIRIYORUZ: 3 klip x 2 vurus = 6 vurusun tamami,
+    ayni fiyata iki kat hikaye.
+    """
+    beats = idea["shots"]
+    n_clips = max(1, min(n_clips, len(beats)))
+    per = len(beats) / n_clips
+    groups: list[list[dict]] = []
+    for i in range(n_clips):
+        start = round(i * per)
+        end = round((i + 1) * per) if i < n_clips - 1 else len(beats)
+        chunk = beats[start:end] or [beats[min(start, len(beats) - 1)]]
+        # Tek klipte ikiden fazla sahne 4 saniyede okunmuyor. Kirparken
+        # ILK IKIYI degil, ILK ve SON vurusu aliyoruz: aksi halde 2 klipte
+        # son grup [4,5] olup finali (6) dusuruyordu.
+        if len(chunk) > 2:
+            chunk = [chunk[0], chunk[-1]]
+        groups.append(chunk)
+    return groups
+
+
+def clip_prompt(idea: dict, beats: list[dict]) -> str:
+    """Bir video klibinin istemi. Birden fazla vurus varsa sahne kesmesi ister."""
+    if len(beats) == 1:
+        return shot_prompt(idea, beats[0])
+
+    shots = " ".join(
+        f"Shot {i}: {b['action']} ({b['camera']})."
+        for i, b in enumerate(beats, 1)
+    )
+    return (
+        f"{idea['character']}. A {len(beats)}-shot sequence with one hard cut between "
+        f"the shots, each shot held for about half the clip. {shots} "
+        f"Keep the same cats, the same room and the same lighting across both shots. "
+        f"Scene: {idea['setting']}. {idea['style']}. "
+        f"Vertical 9:16 composition, subjects fully in frame, expressive faces, "
+        f"no text, no watermark, no letters, no speech bubbles."
+    )
 
 
 def shot_prompt(idea: dict, shot: dict) -> str:

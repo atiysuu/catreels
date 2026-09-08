@@ -60,7 +60,7 @@ class Config:
     video_resolution: str = field(default_factory=lambda: _str("VIDEO_RESOLUTION", "480p"))
     # Ucretli yolda kac klip uretilecek. Cekim sayisindan ayri tutuluyor:
     # her cekim icin klip uretmek maliyeti 3 katina cikariyordu.
-    video_clips: int = field(default_factory=lambda: _int("VIDEO_CLIPS", 2))
+    video_clips: int = field(default_factory=lambda: _int("VIDEO_CLIPS", 3))
 
     # --- reel bicimi -------------------------------------------------------
     width: int = field(default_factory=lambda: _int("REEL_WIDTH", 1080))

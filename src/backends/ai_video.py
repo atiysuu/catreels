@@ -76,15 +76,18 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     # vurus sayisindan bagimsiz -- 6 vurusluk konseptten 2 klip 16sn/0.40 $,
     # 6 klip ise 48sn/1.20 $ olurdu.
     #
-    # Ama ILK n vurusu almak dramayi olduruyor: sadece kurulum gelir, twist
-    # hic gorunmez. story_beats() kancayi ve finali koruyup arasini esit
-    # araliklarla dolduruyor.
+    # Vuruslar SECILMIYOR, PAYLASTIRILIYOR: model tek uretimde sahne kesmesi
+    # yapabildigi icin her klip iki vurus tasiyabiliyor. 3 klip x 2 vurus =
+    # 6 vurusun tamami, ayni fiyata iki kat hikaye. (Onceden story_beats ile
+    # sadece n vurus seciliyordu, gerisi cope gidiyordu.)
     n = max(1, min(len(idea["shots"]), cfg.video_clips))
-    picks = ideas.story_beats(idea, n)
+    groups = ideas.distribute_beats(idea, n)
 
-    cost = estimate_cost(cfg, len(picks))
-    log.info(f"ucretli yol: model={cfg.video_model}, {len(picks)} klip x "
-             f"{cfg.video_clip_seconds}sn, tahmini ~{cost:.2f} Pollen")
+    cost = estimate_cost(cfg, len(groups))
+    total_beats = sum(len(g) for g in groups)
+    log.info(f"ucretli yol: model={cfg.video_model}, {len(groups)} klip x "
+             f"{cfg.video_clip_seconds}sn ({total_beats} vurus), "
+             f"tahmini ~{cost:.2f} Pollen")
 
     rw, rh = request_size(cfg)
     if (rw, rh) != (cfg.width, cfg.height):
@@ -95,8 +98,8 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     raw_dir.mkdir(parents=True, exist_ok=True)
 
     clips: list[pathlib.Path] = []
-    for i, shot in enumerate(picks):
-        prompt = ideas.shot_prompt(idea, shot)
+    for i, beats in enumerate(groups):
+        prompt = ideas.clip_prompt(idea, beats)
         raw = raw_dir / f"v{i:02d}.mp4"
         try:
             client.video(prompt, raw, seed=seed, seconds=cfg.video_clip_seconds,
