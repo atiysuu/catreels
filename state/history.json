@@ -28,5 +28,17 @@
     "media_id": "17944837650339211",
     "permalink": "https://www.instagram.com/reel/DdCEyGaAXi_/",
     "video_url": "https://github.com/atiysuu/catreels/releases/download/reels/reel-20260908-155516.mp4"
+  },
+  {
+    "stamp": "20260909-193428",
+    "title": "boss-chair-takeover",
+    "theme": "kovulma",
+    "backend": "pollinations",
+    "seconds": 8.1,
+    "file": "out/20260909-193428/reel-20260909-193428.mp4",
+    "published": true,
+    "media_id": "17901082020571100",
+    "permalink": "https://www.instagram.com/reel/DdFEysxkR2H/",
+    "video_url": "https://github.com/atiysuu/catreels/releases/download/reels/reel-20260909-193428.mp4"
   }
 ]
