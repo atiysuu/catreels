@@ -40,6 +40,20 @@ def main() -> int:
     log.info(f"token yenilendi, {days} gun gecerli (...{new_token[-6:]})")
     log.summary(f"Instagram tokeni yenilendi - {days} gun gecerli.")
 
+    # Bitis tarihini repoya yaz. Bu bir SIR DEGIL, sadece bir tarih; amac
+    # gunluk calismanin "token X gun sonra oluyor" diye uyarabilmesi.
+    # GH_PAT yoksa secret guncellenemiyor ama en azindan habersiz
+    # yakalanmiyorsunuz.
+    import datetime as _dt, json as _json
+    exp = _dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(seconds=expires_in)
+    (config.STATE / "token_expiry.json").write_text(
+        _json.dumps({"expires_at": exp.isoformat(timespec="seconds"),
+                     "checked_at": _dt.datetime.now(_dt.timezone.utc)
+                                      .isoformat(timespec="seconds"),
+                     "secret_updated": bool(os.getenv("GH_PAT"))}, indent=2),
+        encoding="utf-8")
+    log.info(f"bitis tarihi kaydedildi: {exp.date()}")
+
     pat = os.getenv("GH_PAT")
     repo = os.getenv("GITHUB_REPOSITORY")
     if not pat or not repo:

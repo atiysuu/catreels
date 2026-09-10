@@ -20,6 +20,10 @@ from .instagram import Instagram, InstagramError
 from .pollinations import Pollinations
 
 HISTORY = config.STATE / "history.json"
+TOKEN_EXPIRY = config.STATE / "token_expiry.json"
+
+# Bu esigin altina inince her calismada yuksek sesle uyar.
+TOKEN_WARN_DAYS = 14
 
 # Instagram Reels sinirlari
 MIN_SECONDS = 5.0
@@ -40,6 +44,33 @@ def save_history(entries: list[dict], cfg) -> None:
         json.dumps(entries[-cfg.history_limit:], ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+
+
+def check_token_expiry() -> None:
+    """Token bitisine az kaldiysa uyar.
+
+    Uzun omurlu token 60 gunde doluyor ve yenilemenin secret'a yazilmasi
+    GH_PAT gerektiriyor. PAT yoksa yayin bir sabah sessizce durur ve sebebi
+    aranir. Tarih dosyasi bunu gorunur kiliyor.
+    """
+    if not TOKEN_EXPIRY.exists():
+        return
+    try:
+        data = json.loads(TOKEN_EXPIRY.read_text(encoding="utf-8"))
+        exp = dt.datetime.fromisoformat(data["expires_at"])
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return
+    left = (exp - dt.datetime.now(dt.timezone.utc)).days
+    if left <= 0:
+        log.error(f"Instagram tokeninin suresi DOLDU ({exp.date()}). "
+                  f"Meta panelinden yeni token uretip IG_ACCESS_TOKEN "
+                  f"secret'ini guncelleyin.")
+    elif left <= TOKEN_WARN_DAYS:
+        log.warn(f"Instagram tokeni {left} gun sonra doluyor ({exp.date()}). "
+                 f"GH_PAT tanimliysa otomatik yenilenir; degilse elle "
+                 f"guncellemeniz gerekecek.")
+        log.summary(f"> Uyari: Instagram tokeni {left} gun sonra doluyor "
+                    f"({exp.date()}).")
 
 
 def build_caption(idea: dict) -> str:
@@ -112,6 +143,7 @@ def run(args) -> int:
             log.error("Sadece video uretmek icin --dry-run kullanin.")
             return 2
 
+    check_token_expiry()
     history = load_history()
     recent_titles = [h.get("title", "") for h in history]
 

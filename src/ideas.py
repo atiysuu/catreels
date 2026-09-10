@@ -152,6 +152,16 @@ BEATS = [
     "{b} walks off with the last piece while {a} watches, defeated",
 ]
 
+# Model "no text" ifadesini yalnizca EKRANA BINDIRILEN yazi olarak anliyor;
+# sahnedeki kutu, poset ve kavanozlarin uzerine yine marka basiyor ve o
+# yazilar bozuk cikiyor ("Oateth", "Roucitt"). Duran karede hemen belli
+# oluyor, o yuzden ambalajin kendisini sade istiyoruz.
+NO_TEXT = (
+    "No text anywhere in the frame: no on-screen captions, no watermarks, no logos. "
+    "All packaging, jars, boxes, bags and labels must be plain and unbranded with "
+    "blank surfaces - never any printed words, letters or numbers on any object."
+)
+
 CAMERAS = ["low angle close-up", "medium shot, eye level", "wide shot, slight high angle",
            "extreme close-up on the face", "over-the-shoulder medium shot"]
 
@@ -284,8 +294,8 @@ def clip_prompt(idea: dict, beats: list[dict]) -> str:
         f"between every shot, each shot roughly equal length. {shots} "
         f"Keep the same cats, the same room and the same lighting across both shots. "
         f"Scene: {idea['setting']}. {idea['style']}. "
-        f"Vertical 9:16 composition, subjects fully in frame, expressive faces, "
-        f"no text, no watermark, no letters, no speech bubbles."
+        f"Vertical 9:16 composition, subjects fully in frame, expressive faces. "
+        f"{NO_TEXT}"
     )
 
 
@@ -295,5 +305,5 @@ def shot_prompt(idea: dict, shot: dict) -> str:
         f"{idea['character']} {shot['action']}. "
         f"Scene: {idea['setting']}. Camera: {shot['camera']}. "
         f"{idea['style']}. Vertical 9:16 composition, subjects fully in frame, "
-        f"expressive faces, no text, no watermark, no letters, no speech bubbles."
+        f"expressive faces. {NO_TEXT}"
     )
