@@ -21,7 +21,8 @@ from src.pollinations import Pollinations  # noqa: E402
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--clips", type=int, default=2, help="kac AI video klibi (her biri 4sn)")
-    ap.add_argument("--theme", default=None, help=f"tema: {', '.join(ideas.THEMES)}")
+    ap.add_argument("--situation", default=None, help="belirli bir sitcom durumu (bos = rastgele)")
+    ap.add_argument("--episode", type=int, default=1, help="bolum numarasi")
     ap.add_argument("--name", default="reel", help="cikti dosya adi (uzantisiz)")
     args = ap.parse_args()
 
@@ -33,16 +34,14 @@ def main() -> int:
     log.info(f"{args.clips} klip x {cfg.video_clip_seconds}sn = "
              f"{args.clips * cfg.video_clip_seconds}sn, tahmini ${cost:.2f}")
 
-    if args.theme:
-        if args.theme not in ideas.THEMES:
-            log.error(f"bilinmeyen tema: {args.theme}")
-            return 2
-        ideas.THEMES = {args.theme: ideas.THEMES[args.theme]}
+    if args.situation:
+        ideas.SITUATIONS = [args.situation]
 
     client = Pollinations(cfg)
 
     log.group("Konsept")
-    idea = ideas.generate(client, cfg, [])
+    idea = ideas.generate(client, cfg, [], episode=args.episode)
+    print(f"  bolum    : {idea['episode']} -- {', '.join(idea['cast'])}")
     print(f"  kanca    : {idea['hook']}")
     print(f"  karakter : {idea['character'][:110]}")
     for i, s in enumerate(idea["shots"], 1):

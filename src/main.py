@@ -117,7 +117,11 @@ def run(args) -> int:
 
     # --- 1) fikir ---------------------------------------------------------
     log.group("Konsept uretimi")
-    idea = ideas.generate(client, cfg, recent_titles)
+    # Bolum numarasi gecmisten geliyor: dizi hissi icin sayac surekli artiyor.
+    episode = len(history) + 1
+    recent_casts = [h.get("cast") for h in history if h.get("cast")]
+    idea = ideas.generate(client, cfg, recent_titles, episode=episode,
+                          recent_casts=recent_casts)
 
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S")
     workdir = config.OUT / stamp
@@ -160,7 +164,8 @@ def run(args) -> int:
     record = {
         "stamp": stamp,
         "title": idea["title"],
-        "theme": idea["theme"],
+        "episode": idea["episode"],
+        "cast": idea["cast"],
         "backend": cfg.backend,
         "seconds": round(secs, 1),
         "file": str(final.relative_to(config.ROOT)),

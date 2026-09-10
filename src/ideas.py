@@ -1,246 +1,200 @@
-"""Her calismada yeni bir kedi DRAMASI uretir.
+"""Her calismada dizinin yeni bir BOLUMUNU yazar.
 
-Tasarim degisikligi: eskiden cekimler ayni hareketin kucuk adimlariydi
-(dans eden kedi, poz poz). Bu guvenliydi ama izleyiciyi tutmuyordu.
-Artik her Reel 6 vurusluk bir mikro-drama: kanca -> tirmanma -> twist.
-Ilk kare en carpici olan; merak bosluu ilk saniyede aciliyor.
+Tasarim degisikligi (ikinci tur): onceki surum her bolumde yeni kediler ve
+yeni bir dunya uyduruyordu -- teknik olarak calisiyordu ama izleyen icin
+birbirinden kopuk melodram parcalariydi. Baglanacak kimse yok, o yuzden
+geri donmek icin sebep de yok.
+
+Artik sitcom mantigi: sabit kadro (src/cast.py), sabit ev, gunluk hayattan
+kucuk olaylar. Espri karakterden cikiyor -- Pasha'nin tembelligini bilince
+kanepe sahnesinde ne yapacagini tahmin edip guluyorsun.
 
 Model erisilemezse tamamen yerel sablonla devam edilir; hat asla durmaz.
 """
 import json
 import random
 
-from . import log
+from . import cast, log
 from .textgen import TextGenError, concept_json
 
-# Her tema, ICINDE DONUS OLAN bir premis havuzu. Duz durum degil, olay.
-THEMES = {
-    "aldatma": [
-        "kedi eve erken gelir, dolapta baska bir kedi bulur",
-        "kedi sevgilisini en yakin arkadasiyla kafede yakalar",
-        "kedi telefonda mesajlari gorur, sevgilisi yalan soyler ama fotograf ortaya cikar",
-        "kedi dogum gunu suprizi hazirlar, sevgilisi baskasiyla gelir",
-        "kedi cift terapisine gider, terapist de sevgilisinin sevgilisi cikar",
-    ],
-    "sevgili": [
-        "kedi evlenme teklif eder, yuzuk kutusu bos cikar",
-        "kedi ilk bulusmaya gider, karsisina cocuklugundan tanidigi kedi cikar",
-        "kedi sevgilisine surpriz yapar, kapiyi acan baska biri olur",
-        "kedi yagmurda saatlerce bekler, sevgilisi gelmez ama not birakmistir",
-        "kedi ayrilmaya karar verir, tam soyleyecekken sevgilisi ona teklif eder",
-    ],
-    "kovulma": [
-        "kedi patronuna kahve doker, kovulur, ertesi gun patronun koltuguna oturur",
-        "kedi kovulur, cikarken tum ofis ayaga kalkip alkislar",
-        "kedi zam ister, patron guler, kedi rakip sirkete gecer",
-        "kedi mesai sonrasi yakalanir, aslinda sirketi kurtaran raporu yaziyordur",
-        "kedi kovulur, bir yil sonra ayni ofise patron olarak doner",
-    ],
-    "zengin": [
-        "sokak kedisi piyango kazanir, ertesi gun limuzinle mahalleye doner",
-        "fakir kedi, kendisini asagilayan kediyi luks restoranda garson gorur",
-        "kedi caydan para cikarir, mahalledeki herkese ziyafet ceker",
-        "kedi eski paltosuyla luks magazaya alinmaz, kartla geri doner",
-        "kedi mirasi reddeder, sokakta buyuten kediye verir",
-    ],
-    "intikam": [
-        "kedi surekli alay edilir, yetenek yarismasinda sahneye cikar",
-        "kedi balik calan komsuyu kurar, tuzagi kendi kurdugu tuzak olur",
-        "kedi kucuk gorulur, mahalle kavgasinda herkesi sasirtir",
-        "kedi disari atilir, sahibi onu bulmak icin sehri arar",
-    ],
-    "komik": [
-        "kedi diyet yapacagini ilan eder, gece buzdolabinda yakalanir",
-        "kedi kopek taklidi yapar, gercek kopek gelir",
-        "kedi robot supurgeye biner, evin duzenini bozar",
-        "kedi karaoke yapar, mikrofonu kimseye vermez",
-    ],
-}
-
-# Gorsel dil: her cekimde ayni kalmali ki kedi ayni kedi gorunsun.
-# Cizgi film / Pixar secenekleri KALDIRILDI -- istenen sey gercek kedi
-# dokusuna sahip, sinematik isikta cekilmis tombik kediler.
-STYLE_POOL = [
-    "photorealistic cinematic still, 85mm lens, real fluffy cat fur with visible individual "
-    "hairs, soft window light, creamy bokeh, shallow depth of field, natural colours",
-    "hyperreal photograph, 50mm lens, moody telenovela lighting with warm key and cool "
-    "shadows, real cat fur texture, subtle film grain, shallow depth of field",
-    "photorealistic cinematic still, golden hour light through a window, real cat fur "
-    "detail, warm natural tones, gentle rim light, shallow depth of field",
+# Gunluk hayattan sitcom durumlari. Melodram degil: kucuk, tanidik, komik.
+SITUATIONS = [
+    "the last treat in the bag and two cats who both want it",
+    "someone knocked over the plant and nobody admits it",
+    "a cardboard box arrives and becomes contested territory",
+    "the sunny spot on the sofa is only big enough for one",
+    "one of them starts a diet and the fridge disagrees",
+    "the vet carrier comes out of the cupboard",
+    "a fly gets into the flat and ruins everyone's afternoon",
+    "someone ate the food that was clearly not theirs",
+    "the vacuum cleaner comes on without warning",
+    "a red laser dot appears and nobody can explain it",
+    "the good blanket is claimed by the wrong cat",
+    "a guest is coming and the flat is a disaster",
+    "one of them gets stuck somewhere embarrassing",
+    "the water bowl is empty and everyone blames everyone",
+    "a new scratching post arrives and is immediately ignored",
+    "someone is caught on the kitchen counter at midnight",
 ]
 
-SYSTEM = """You write viral vertical short-form CAT DRAMAS. Think telenovela, but every
-character is a cat. You return ONLY a JSON object. No prose, no markdown fence.
+# Gorsel dil: her bolumde ayni his olsun diye dar tutuldu. Cizgi film yok --
+# gercek kedi dokusu, sitcom aydinlatmasi.
+STYLE_POOL = [
+    "photorealistic cinematic still, 50mm lens, real fluffy cat fur with visible "
+    "individual hairs, warm sitcom lighting, soft shadows, natural colours, "
+    "shallow depth of field",
+    "photorealistic cinematic still, 35mm lens, bright even daylight through a "
+    "window, real cat fur texture, homely warm tones, gentle contrast",
+]
 
-THE ONE RULE THAT MATTERS: the viewer decides in 1.5 seconds whether to keep watching.
-So beat 1 is never a calm establishing shot - it is the most arresting image in the
-whole story, dropped in cold. Start in the middle of the drama, not before it.
+SYSTEM = """You write episodes of an ongoing VERTICAL SITCOM in which all the characters
+are cats sharing one small flat. You return ONLY a JSON object. No prose, no fence.
 
-Structure the beats as a micro-drama, not as one continuous movement:
-  beat 1        the hook - the shocking / funny image that opens a question
-  beats 2..n-2  escalation - the situation gets worse or stranger
-  beat n-1      the turn - something is revealed or reversed
-  beat n        the payoff - reaction, comeuppance, or punchline
+This is a SERIES, not a one-off. The same cats live in the same flat every episode.
+You are given the cast; never invent new cats, never rename them, never change how they
+look. Write them the way a sitcom writer writes regulars: the comedy comes from the
+audience already knowing exactly how each one will react.
+
+TONE: everyday domestic comedy. Small stakes, big reactions. Think flatmates arguing
+over the last snack, not betrayal and revenge. Nothing tragic, nothing melodramatic,
+no villains - just four cats being annoying to each other in a loving way.
+
+THE FIRST BEAT MATTERS MOST: the viewer decides in 1.5 seconds. Open on the funniest or
+most absurd image of the episode, mid-situation. Never a calm establishing shot.
+
+Shape the beats like a joke, not like a tragedy:
+  beat 1        the setup image - we see the problem immediately
+  beats 2..n-2  escalation - it gets sillier, someone overreacts
+  beat n-1      the turn - it goes wrong in an unexpected way
+  beat n        the button - the final funny image, usually someone unbothered
 
 Rules:
-- EVERYTHING you write is in ENGLISH. The account is global, so avoid culture-specific
-  references, idioms and wordplay that do not travel.
-- The caption must invite a reply: a question, a hot take, or a "who else has been here"
-  energy. 1-2 short sentences, at most one emoji.
-- The hook is AT MOST 26 characters including spaces. It is burned onto the first seconds
-  of the video, so it must fit. Write it as an open loop, not a summary:
-  "Someone was in there" beats "The cat was cheating". No emoji, no ending punctuation.
-- The character field is the single most important one: one dense sentence describing the
-  cat(s) so precisely (breed, fur colour and pattern, eye colour, body shape) that the
-  model draws the SAME cat every time. If there are two cats, describe BOTH distinctly in
-  that one sentence. Never change it between beats.
-- The cats MUST be CHUBBY, round-faced and adorable -- plush cheeks, soft bellies, big
-  round eyes. They must look like REAL cats photographed on a real set: never cartoon,
-  never Pixar, never 3D render, never illustration. Do not dress them in clothes;
-  expressive faces and body language carry the drama.
-- Each beat's action is ONE clear physical moment with visible emotion, 10-20 words.
-  Name who is doing what, and show feeling through body language and face - no thought
-  bubbles, no speech, no text in the image.
-- Cats only. Keep it playful soap-opera drama, never cruel and never graphic.
+- EVERYTHING in ENGLISH. Global audience: no idioms or references that do not travel.
+- Refer to the cats BY NAME in every beat, so the sequence reads as one story.
+- Each beat is ONE clear physical moment with a visible facial expression and body
+  language, 10-20 words. No speech, no thought bubbles, no text in the image.
+- The cats are REAL cats photographed on a real set: chubby, round-faced, adorable.
+  Never cartoon, never Pixar, never 3D render, never illustration. No clothing.
+- The caption should feel like a friend captioning their pets: light, funny, and it
+  invites a reply. 1-2 short sentences, at most one emoji.
+- The hook is AT MOST 26 characters including spaces, burned onto the video. Write it
+  like a sitcom title card or a relatable complaint: "He sat on it again",
+  "Nobody touched the plant". No emoji, no ending punctuation.
 """
 
-USER_TMPL = """Write a {shots}-beat vertical cat drama.
+USER_TMPL = """Write episode {episode} of the series.
 
-Theme: {theme}
-Premise to dramatise: {seed_idea}
-Visual style to keep in every beat: {style}
-Do not repeat any of these recent titles: {recent}
+Cast in this episode:
+{roster}
+
+Situation to build the episode around: {situation}
+Location: {location}
+Visual style for every beat: {style}
+Do not repeat any of these recent episodes: {recent}
 
 Return exactly this JSON shape:
 {{
   "title": "short English slug-like title",
-  "hook": "max 26 characters, an open loop, burned onto the video",
-  "character": "one dense English sentence; if two cats, both described distinctly",
-  "setting": "one English sentence describing the location and lighting",
+  "hook": "max 26 characters, sitcom title-card energy, burned onto the video",
   "beats": [
-    {{"action": "English, one clear dramatic moment with visible emotion",
+    {{"action": "English, one funny physical moment, cats named, visible expression",
       "camera": "English camera note, e.g. low angle close-up, wide shot"}}
   ],
-  "caption": "caption that invites a reply, 1-2 sentences, max one emoji",
-  "hashtags": ["#cat", "#cats", "8-14 English tags for a global audience"]
+  "caption": "light funny caption that invites a reply, 1-2 sentences, max one emoji",
+  "hashtags": ["#cats", "#catsitcom", "8-14 English tags for a global audience"]
 }}
 
-The beats array must contain exactly {shots} items, following hook -> escalation ->
-turn -> payoff."""
+The beats array must contain exactly {shots} items: setup -> escalation -> turn -> button."""
 
 
-# --- yerel yedek havuzlari (metin modeli hic calismasa bile drama cikar) ----
-
-CHARACTERS = [
-    ("a very chubby round orange tabby cat with plush cheeks, a soft belly and huge round "
-     "amber eyes, and an equally chubby fluffy white cat with a rosy pink nose and big blue eyes"),
-    ("a plump grey British Shorthair with round copper eyes and thick velvety fur, and a "
-     "chubby cream Ragdoll with a fluffy tail and gentle blue eyes"),
-    ("a roly-poly ginger cat with a big round face and short legs, and a small tubby "
-     "tuxedo cat with white mittens and wide green eyes"),
-    ("a fat fluffy calico cat with soft round cheeks and warm hazel eyes, and a stocky "
-     "silver tabby with a broad face and big golden eyes"),
+HOOKS = [
+    "He sat on it again", "Nobody touched the plant", "It was not his food",
+    "The box is mine now", "She panicked immediately", "Day one of the diet",
+    "That was the last treat", "He has no regrets", "The sunny spot war",
 ]
 
-SETTINGS = {
-    "aldatma": ["a dim apartment hallway at night, a single warm lamp and a half-open door",
-                "a rainy city cafe window seat at dusk, neon reflections on wet glass"],
-    "sevgili": ["a rooftop terrace at sunset, string lights and a small table for two",
-                "a quiet beach at golden hour, long shadows on wet sand"],
-    "kovulma": ["a grey open-plan office at night, one desk lamp still on",
-                "a glass corner office at sunrise, city skyline behind"],
-    "zengin": ["a marble hotel lobby with chandeliers and gold trim",
-               "a narrow backstreet at night, then bright shop windows"],
-    "intikam": ["a bright talent-show stage with a single spotlight and dark audience",
-                "a cluttered neighbourhood courtyard at noon, harsh sunlight"],
-    "komik": ["a cosy kitchen at midnight, only the open fridge lighting the room",
-              "a messy living room full of snacks and blankets"],
-}
+CAPTIONS = [
+    "Which one is your flatmate?", "Tell me you have this cat without telling me.",
+    "This happens in my flat every single day.", "Whose side are you on?",
+    "He is not even sorry.", "Rate the level of drama out of ten.",
+]
 
-HOOKS = {
-    "aldatma": ["Someone was in there", "I opened the door", "I saw the photo"],
-    "sevgili": ["The box was empty", "He waited for hours", "She almost said it"],
-    "kovulma": ["I got fired today", "The boss laughed", "He came back later"],
-    "zengin": ["Yesterday he was broke", "They turned him away", "The ticket was real"],
-    "intikam": ["They all laughed", "Then he stepped up", "The trap backfired"],
-    "komik": ["The diet starts today", "Caught at midnight", "He never let go"],
-}
-
-CAPTIONS = {
-    "aldatma": ["What would you have done?", "Has this ever happened to you?"],
-    "sevgili": ["This should be illegal levels of cute.", "Ever waited this long?"],
-    "kovulma": ["Everyone has a boss story. What is yours?", "That ending though."],
-    "zengin": ["Never underestimate anyone.", "Did you see that coming?"],
-    "intikam": ["Best comeback ever?", "Did you catch their faces?"],
-    "komik": ["This cat is all of us.", "How long did your diet last?"],
-}
-
+# Yerel yedek: metin modeli hic calismasa bile kadro tanidik kalsin.
 BEATS = [
-    "the first cat freezes in the doorway, eyes wide, one paw still on the handle",
-    "the second cat looks up sharply, caught, ears flattening in panic",
-    "the first cat steps back slowly, tail low, jaw tight with disbelief",
-    "the second cat reaches out a pleading paw, the first cat turns away",
-    "the first cat lifts its chin, expression hardening into calm resolve",
-    "the first cat walks out into the light, head high, not looking back",
+    "{a} freezes mid-bite with the stolen snack still in his mouth, eyes enormous",
+    "{b} stares at {a} without blinking, slowly tilting her head in disbelief",
+    "{a} tries to casually sit on the evidence, pretending nothing happened",
+    "{b} leans in closer, whiskers forward, refusing to look away",
+    "{a} rolls onto his back in mock innocence, paws in the air",
+    "{b} walks off with the last piece while {a} watches, defeated",
 ]
 
 CAMERAS = ["low angle close-up", "medium shot, eye level", "wide shot, slight high angle",
            "extreme close-up on the face", "over-the-shoulder medium shot"]
 
 
-def _fallback(theme: str, seed_idea: str, style: str, shots: int) -> dict:
-    """Metin modeli olmadan da calisan, kendi icinde cesitli yedek drama."""
+def _fallback(pair, situation: str, location: str, style: str, shots: int) -> dict:
+    a, b = (cast.CAST[pair[0]]["name"], cast.CAST[pair[1]]["name"])
     return {
-        "title": seed_idea[:40],
-        "hook": random.choice(HOOKS.get(theme, HOOKS["komik"])),
-        "character": random.choice(CHARACTERS),
-        "setting": random.choice(SETTINGS.get(theme, SETTINGS["komik"])),
-        "beats": [{"action": BEATS[i % len(BEATS)], "camera": CAMERAS[i % len(CAMERAS)]}
+        "title": situation[:40],
+        "hook": random.choice(HOOKS),
+        "beats": [{"action": BEATS[i % len(BEATS)].format(a=a, b=b),
+                   "camera": CAMERAS[i % len(CAMERAS)]}
                   for i in range(shots)],
-        "caption": random.choice(CAPTIONS.get(theme, CAPTIONS["komik"])),
-        "hashtags": ["#cat", "#cats", "#catsofinstagram", "#catlovers", "#funnycats",
-                     "#catdrama", "#cutecats", "#chubbycat", "#catreels", "#aicat",
-                     "#catvideos", "#catlife"],
+        "caption": random.choice(CAPTIONS),
+        "hashtags": ["#cats", "#catsitcom", "#catsofinstagram", "#funnycats",
+                     "#cutecats", "#chubbycat", "#catlovers", "#catreels",
+                     "#catcomedy", "#catlife", "#aicat", "#catvideos"],
         "_fallback": True,
     }
 
 
-def generate(client, cfg, history: list[str]) -> dict:
-    theme = random.choice(list(THEMES))
-    seed_idea = random.choice(THEMES[theme])
+def generate(client, cfg, history: list[str], episode: int = 1,
+             recent_casts: list[list[str]] | None = None) -> dict:
+    # Rastgele secim ust uste ayni ikiliyi verebiliyor; dizide bu monotonluk
+    # yaratir. Son iki bolumde kullanilan ikilileri eleyip oyle seciyoruz.
+    used = {tuple(sorted(c)) for c in (recent_casts or [])[-2:]}
+    havuz = [p for p in cast.PAIRINGS if tuple(sorted(p)) not in used] or cast.PAIRINGS
+    pair = random.choice(havuz)
+    situation = random.choice(SITUATIONS)
+    location = random.choice(cast.LOCATIONS)
     style = random.choice(STYLE_POOL)
-    recent = ", ".join(history[-12:]) or "yok"
+    recent = ", ".join(history[-12:]) or "none"
 
-    prompt = USER_TMPL.format(shots=cfg.shots, theme=theme, seed_idea=seed_idea,
-                              style=style, recent=recent)
+    prompt = USER_TMPL.format(episode=episode, roster=cast.roster(list(pair)),
+                              situation=situation, location=location,
+                              style=style, recent=recent, shots=cfg.shots)
     try:
         idea = concept_json(client, cfg, SYSTEM, prompt)
     except (TextGenError, json.JSONDecodeError) as exc:
         log.warn(f"fikir modeli kullanilamadi ({exc}); yerel sablona dusuluyor")
-        idea = _fallback(theme, seed_idea, style, cfg.shots)
+        idea = _fallback(pair, situation, location, style, cfg.shots)
 
-    idea = _normalise(idea, theme, seed_idea, style, cfg.shots)
-    log.info(f"drama: [{theme}] {idea['title']} -- kanca: {idea['hook']!r}")
+    idea = _normalise(idea, pair, situation, location, style, cfg.shots, episode)
+    log.info(f"bolum {episode}: {cast.names(list(pair))} -- {idea['title']} "
+             f"| kanca: {idea['hook']!r}")
     return idea
 
 
-def _normalise(idea: dict, theme: str, seed_idea: str, style: str, want: int) -> dict:
-    """Modelin ne dondurdugune bakmaksizin kullanilabilir bir sozluk garanti eder."""
-    base = _fallback(theme, seed_idea, style, want)
+def _normalise(idea: dict, pair, situation: str, location: str, style: str,
+               want: int, episode: int) -> dict:
+    base = _fallback(pair, situation, location, style, want)
+    keys = list(pair)
     out = {
-        "theme": theme,
-        "seed_idea": seed_idea,
+        "episode": episode,
+        "cast": keys,
+        "situation": situation,
         "style": style,
         "title": str(idea.get("title") or base["title"])[:80],
-        # Kanca ekrana basiliyor: model uzun yazarsa kadraja sigmasi icin kirp.
         "hook": str(idea.get("hook") or base["hook"]).strip().rstrip(".!?")[:30],
-        "character": str(idea.get("character") or base["character"]),
-        "setting": str(idea.get("setting") or base["setting"]),
+        # Karakter tarifi MODELDEN GELMEZ: kadro dosyasindan birebir gelir.
+        # Diziyi dizi yapan sey bu -- her bolumde ayni kediler.
+        "character": cast.describe(keys),
+        "setting": location,
         "caption": str(idea.get("caption") or base["caption"]),
         "used_fallback": bool(idea.get("_fallback")),
     }
 
-    # Model "beats" yerine "shots" dondurebilir; ikisini de kabul et.
     raw = idea.get("beats") or idea.get("shots") or []
     clean = []
     for s in raw:
@@ -253,7 +207,6 @@ def _normalise(idea: dict, theme: str, seed_idea: str, style: str, want: int) ->
     while len(clean) < want:
         clean.append(base["beats"][i % len(base["beats"])])
         i += 1
-    # Hat boyunca "shots" adiyla tasiniyor (backend'ler bu anahtari kullaniyor).
     out["shots"] = clean[:want]
 
     tags = idea.get("hashtags") or base["hashtags"]
@@ -262,29 +215,12 @@ def _normalise(idea: dict, theme: str, seed_idea: str, style: str, want: int) ->
     return out
 
 
-def story_beats(idea: dict, n: int) -> list[dict]:
-    """Ucretli yol icin hikayeyi tasiyan n vurusu secer.
-
-    Ilk n vurusu almak dramayi olduruyordu: 6 vuruslu bir hikayeden ilk 2'sini
-    almak sadece kurulumu verir, twist'i hic gostermez. Bunun yerine kancayi ve
-    finali her zaman koruyup arasini esit araliklarla dolduruyoruz.
-    """
-    beats = idea["shots"]
-    if n >= len(beats):
-        return beats
-    if n == 1:
-        return [beats[0]]
-    step = (len(beats) - 1) / (n - 1)
-    return [beats[round(i * step)] for i in range(n)]
-
-
 def distribute_beats(idea: dict, n_clips: int) -> list[list[dict]]:
-    """6 vurusu n klibe pay eder -- her klip birden fazla sahne tasiyabilir.
+    """Vuruslari kliplere pay eder -- her klip birden fazla sahne tasiyabilir.
 
-    story_beats() vurus SECIYORDU, yani 3 klipte hikayenin yarisi cope
-    gidiyordu. Video modeli tek uretimde sahne kesmesi yapabildigi icin
-    artik vuruslari SIKISTIRIYORUZ: 3 klip x 2 vurus = 6 vurusun tamami,
-    ayni fiyata iki kat hikaye.
+    Vurus SECMEK yerine PAYLASTIRIYORUZ: video modeli tek uretimde sahne
+    kesmesi yapabildigi icin 3 klip x 2 vurus = 6 vurusun tamami, ayni
+    fiyata iki kat hikaye.
     """
     beats = idea["shots"]
     n_clips = max(1, min(n_clips, len(beats)))
@@ -294,9 +230,8 @@ def distribute_beats(idea: dict, n_clips: int) -> list[list[dict]]:
         start = round(i * per)
         end = round((i + 1) * per) if i < n_clips - 1 else len(beats)
         chunk = beats[start:end] or [beats[min(start, len(beats) - 1)]]
-        # Tek klipte ikiden fazla sahne 4 saniyede okunmuyor. Kirparken
-        # ILK IKIYI degil, ILK ve SON vurusu aliyoruz: aksi halde 2 klipte
-        # son grup [4,5] olup finali (6) dusuruyordu.
+        # Kirparken ILK IKIYI degil, ILK ve SON vurusu aliyoruz: aksi halde
+        # 2 klipte son grup [4,5] olup finali (6) dusuruyordu.
         if len(chunk) > 2:
             chunk = [chunk[0], chunk[-1]]
         groups.append(chunk)
@@ -313,7 +248,7 @@ def clip_prompt(idea: dict, beats: list[dict]) -> str:
         for i, b in enumerate(beats, 1)
     )
     return (
-        f"{idea['character']}. A {len(beats)}-shot sequence with one hard cut between "
+        f"{idea['character']} A {len(beats)}-shot sequence with one hard cut between "
         f"the shots, each shot held for about half the clip. {shots} "
         f"Keep the same cats, the same room and the same lighting across both shots. "
         f"Scene: {idea['setting']}. {idea['style']}. "
@@ -325,7 +260,7 @@ def clip_prompt(idea: dict, beats: list[dict]) -> str:
 def shot_prompt(idea: dict, shot: dict) -> str:
     """Tek bir vurusu ureten tam gorsel istemi."""
     return (
-        f"{idea['character']}. {shot['action']}. "
+        f"{idea['character']} {shot['action']}. "
         f"Scene: {idea['setting']}. Camera: {shot['camera']}. "
         f"{idea['style']}. Vertical 9:16 composition, subjects fully in frame, "
         f"expressive faces, no text, no watermark, no letters, no speech bubbles."
