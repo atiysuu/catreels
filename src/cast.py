@@ -13,36 +13,43 @@ isteme giriyor.
 
 # Her tarif, gorsel modelin ayni kediyi cizmesi icin yeterince yogun olmali:
 # govde, tuy deseni, yuz, goz rengi ve tek bir ayirt edici isaret.
+#
+# Tarifler bilerek GERCEK kedi anatomisine yazildi. Onceki surumde "plush
+# cheeks", "huge round eyes" gibi ifadeler vardi ve model bunlari oyuncak
+# bebek yuzune ceviriyordu -- tombik ama gercek degil. Simdi cinsi, kilosu
+# ve kusurlari (dagilmis tuy, hafif sasi bakis, yamuk biyik) tarif ediliyor.
 CAST = {
     "pasha": {
         "name": "Pasha",
-        "look": ("Pasha, an enormous round orange tabby cat with a very round face, "
-                 "thick plush cheeks, a heavy soft belly, short legs and huge lazy "
-                 "amber eyes, with a distinctive white blaze down his nose"),
+        "look": ("Pasha, a very overweight ginger tabby domestic shorthair with classic "
+                 "swirled tabby markings, a low hanging belly that sways when he walks, "
+                 "short thick legs, heavy jowls, narrow sleepy amber eyes and a white "
+                 "stripe down his nose, fur slightly greasy and uneven along his back"),
         "role": "the self-appointed king of the sofa",
         "traits": "lazy, enormously proud, treats every minor inconvenience as a personal insult",
     },
     "mochi": {
         "name": "Mochi",
-        "look": ("Mochi, a small very round cream-white cat with a fluffy chest, "
-                 "rosy pink nose, tiny ears and enormous worried blue eyes, always "
-                 "looking slightly startled"),
+        "look": ("Mochi, a small plump cream-white long-haired cat with a slightly "
+                 "matted ruff, faint tabby ghost markings on her legs, a pink nose with "
+                 "a small dark freckle, thin whiskers that bend unevenly and pale blue "
+                 "eyes set a little wide apart"),
         "role": "the anxious one who keeps the flat tidy",
         "traits": "nervous, well-meaning, apologises with her body language, panics early and often",
     },
     "olive": {
         "name": "Olive",
-        "look": ("Olive, a chubby black cat with a white chest patch shaped like a "
-                 "bib, one white front paw and sharp bright green eyes, with a "
-                 "permanently smug expression"),
+        "look": ("Olive, a stocky black domestic shorthair with a ragged white bib on "
+                 "her chest, one white front paw, a few stray white hairs on her flank, "
+                 "a slightly notched left ear and narrow yellow-green eyes"),
         "role": "the schemer who starts most of the trouble",
         "traits": "clever, mischievous, never admits fault, always has a plan that backfires",
     },
     "biscuit": {
         "name": "Biscuit",
-        "look": ("Biscuit, a stocky grey British Shorthair with a very broad flat "
-                 "face, dense velvety fur, a thick neck and round copper eyes that "
-                 "never blink"),
+        "look": ("Biscuit, a thickset blue-grey British Shorthair with a broad square "
+                 "muzzle, dense plush coat that stands up slightly on his shoulders, a "
+                 "heavy neck, and small round copper eyes with a flat unreadable stare"),
         "role": "the silent flatmate who eats everything",
         "traits": "deadpan, says nothing, appears at the worst possible moment, unbothered by chaos",
     },

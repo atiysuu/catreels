@@ -37,14 +37,27 @@ SITUATIONS = [
     "someone is caught on the kitchen counter at midnight",
 ]
 
-# Gorsel dil: her bolumde ayni his olsun diye dar tutuldu. Cizgi film yok --
-# gercek kedi dokusu, sitcom aydinlatmasi.
+# Gorsel dil: FOTOGRAF dili, render dili degil.
+#
+# "photorealistic cinematic still" gibi ifadeler modeli CGI'a itiyordu --
+# cikan kareler ust duzey render gibi duruyor, telefonla cekilmis kedi gibi
+# degil. Cozum iki yonlu: (1) gercek ekipman ve isik dili, (2) KUSUR dili.
+# AI hissinin asil kaynagi asiri kusursuzluk: fazla simetrik yuzler, fazla
+# duzgun tuy. Bu yuzden hafif odak kaymasi, dogal grain, dagilmis tuy ve
+# elde cekim gibi kusurlar acikca isteniyor.
 STYLE_POOL = [
-    "photorealistic cinematic still, 50mm lens, real fluffy cat fur with visible "
-    "individual hairs, warm sitcom lighting, soft shadows, natural colours, "
-    "shallow depth of field",
-    "photorealistic cinematic still, 35mm lens, bright even daylight through a "
-    "window, real cat fur texture, homely warm tones, gentle contrast",
+    "candid amateur photograph of real house cats, shot on a full-frame DSLR with "
+    "a 50mm lens at f/2.0, available window light only, natural imperfect framing, "
+    "slight handheld motion blur, visible sensor noise, real fur that is slightly "
+    "messy and uneven, whisker detail, not CGI, not a 3D render, not an illustration",
+    "documentary style photograph of real domestic cats in a real home, 35mm lens, "
+    "mixed indoor lighting with a slightly blown-out window, subtle film grain, "
+    "natural asymmetric faces, tufty uneven fur, a little dust in the air, "
+    "candid unposed moment, not CGI, not a 3D render, not an illustration",
+    "snapshot photograph of real cats caught mid-action, 50mm lens, slightly "
+    "underexposed indoor light, mild motion blur on moving paws, realistic "
+    "imperfect fur with small mats and stray hairs, believable everyday clutter, "
+    "not CGI, not a 3D render, not an illustration",
 ]
 
 SYSTEM = """You write episodes of an ongoing VERTICAL SITCOM in which all the characters
@@ -79,8 +92,12 @@ Rules:
   the next one. The episode should feel like one accident gathering speed.
 - Each beat is 12-22 words: who moves, what they do, what the object does, and the
   expression on their face. No speech, no thought bubbles, no text in the image.
-- The cats are REAL cats photographed on a real set: chubby, round-faced, adorable.
+- The cats are REAL, slightly overweight house cats caught on camera in a real flat.
   Never cartoon, never Pixar, never 3D render, never illustration. No clothing.
+  Write the beats the way you would describe a real home video: cats land awkwardly,
+  slip on smooth floors, knock things with their bodies rather than their paws, and
+  their fur gets messed up. Avoid describing them as "adorable" or "cute" - let the
+  situation be funny and let them look like actual animals.
 - The caption should feel like a friend captioning their pets: light, funny, and it
   invites a reply. 1-2 short sentences, at most one emoji.
 - The hook is AT MOST 26 characters including spaces, burned onto the video. Write it
