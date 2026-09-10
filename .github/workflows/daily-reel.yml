@@ -4,11 +4,10 @@ on:
   schedule:
     # GitHub cron UTC calisir. Turkiye = UTC+3 (yaz saati uygulanmiyor).
     #
-    # 2 gunde bir gonderi. seedance-2.5 ile 8sn Reel 0.82 $; bu siklikta
-    # ayda ~12.34 $. Daha sik istersen once butceyi kontrol et.
-    # ("*/2" ayin tek gunlerinde tetikler; ay sonunda 31->1 arka arkaya
-    # gelebilir, bilincli bir tolerans.)
-    - cron: "0 17 */2 * *"   # 20:00 TR, 2 gunde bir
+    # Gunde 1 gonderi. minimax-h3-max-turbo ile 15sn Reel 0.15 $ tuttugu
+    # icin bu siklik ayda ~4.50 $ ediyor -- 2 gunde bire gore fark kucuk,
+    # gunluk yayin ise hesabin buyumesi icin belirgin sekilde daha iyi.
+    - cron: "0 17 * * *"   # 20:00 TR, her gun
   workflow_dispatch:
     inputs:
       dry_run:
