@@ -136,7 +136,10 @@ class Instagram:
             "caption": caption[:2200],
             "share_to_feed": "true" if self.cfg.share_to_feed else "false",
         }
-        data = self._post(f"{self.cfg.ig_user_id}/media", payload)
+        # resolve_user_id() SART: kimlik cozulmemisse yol "/media" oluyor ve
+        # Meta "Object with ID 'media' does not exist" diyor -- sebebi
+        # anlasilmasi zor bir hata. Her giris noktasi kendi cozumunu yapsin.
+        data = self._post(f"{self.resolve_user_id()}/media", payload)
         cid = data.get("id")
         if not cid:
             raise InstagramError(f"container id donmedi: {data}")
@@ -165,7 +168,7 @@ class Instagram:
         raise InstagramError(f"container {timeout_s}sn icinde hazir olmadi (son durum: {last})")
 
     def publish(self, container_id: str) -> dict:
-        data = self._post(f"{self.cfg.ig_user_id}/media_publish",
+        data = self._post(f"{self.resolve_user_id()}/media_publish",
                           {"creation_id": container_id})
         media_id = data.get("id")
         if not media_id:

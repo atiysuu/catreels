@@ -8,6 +8,7 @@ dogrulamasiz erisilebilir olmak zorunda. Uc secenek:
 """
 import os
 import pathlib
+import time
 
 import requests
 
@@ -150,22 +151,38 @@ def upload(cfg, path: pathlib.Path) -> str:
     return url
 
 
-def verify(url: str) -> None:
+def verify(url: str, attempts: int = 5) -> None:
     """Meta indirmeden once biz indirelim: erisim ve icerik tipi dogru mu?
 
     GitHub Release adresleri imzali bir CDN adresine 302 atar; Meta bunu
     takip eder, biz de takip ederek ayni yolu dogrularız.
+
+    YENIDEN DENEME SART: asset yuklendikten hemen sonra CDN'e yayilmasi
+    birkac saniye suruyor. Tek denemede dogrulamak, yukleme basarili
+    oldugu halde yayini basarisiz kiliyordu -- 10 Eylul'de tam olarak bu
+    yasandi: asset release'e cikmisti, Instagram'a hic gidilemedi.
     """
-    r = requests.get(url, stream=True, timeout=120, allow_redirects=True)
-    ctype = r.headers.get("content-type", "")
-    clen = r.headers.get("content-length", "?")
-    head = next(r.iter_content(chunk_size=12), b"")
-    r.close()
+    last = ""
+    for i in range(1, attempts + 1):
+        try:
+            r = requests.get(url, stream=True, timeout=120, allow_redirects=True)
+            ctype = r.headers.get("content-type", "")
+            clen = r.headers.get("content-length", "?")
+            head = next(r.iter_content(chunk_size=12), b"")
+            status = r.status_code
+            r.close()
 
-    if r.status_code != 200:
-        raise HostError(f"public URL erisilemez: HTTP {r.status_code} ({url})")
-    # MP4 dosyalari 4. bayttan itibaren 'ftyp' tasir.
-    if b"ftyp" not in head:
-        raise HostError(f"public URL bir MP4 dondurmuyor (ctype={ctype}, ilk baytlar={head!r})")
+            if status == 200 and b"ftyp" in head:
+                log.info(f"public URL dogrulandi: HTTP 200, {ctype}, {clen} bayt")
+                return
+            last = (f"HTTP {status}, ctype={ctype}, ilk baytlar={head!r}")
+        except requests.RequestException as exc:
+            last = f"{type(exc).__name__}: {exc}"
 
-    log.info(f"public URL dogrulandi: HTTP 200, {ctype}, {clen} bayt")
+        if i < attempts:
+            wait = 3 * i
+            log.warn(f"public URL henuz hazir degil ({last}); {wait}sn sonra "
+                     f"tekrar denenecek ({i}/{attempts})")
+            time.sleep(wait)
+
+    raise HostError(f"public URL {attempts} denemede dogrulanamadi -> {last} ({url})")
