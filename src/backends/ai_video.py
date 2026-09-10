@@ -16,6 +16,8 @@ from ..pollinations import PollinationsError, new_seed
 PRICE_BY_RES = {
     ("seedance-2.5", "480p"): 0.1028,
     ("seedance-2.5", "720p"): 0.2312,
+    ("minimax/minimax-h3-max-turbo", "480p"): 0.00625,
+    ("minimax/minimax-h3-max-turbo", "768p"): 0.01,
 }
 
 PRICE_PER_SEC = {
@@ -32,7 +34,8 @@ PRICE_PER_SEC = {
 # istemek ya hata veriyor ya sessizce dusuruluyor; ikisi de kotu. Cikti tuvali
 # yine 1080x1920 kalir, klipler montajda lanczos+cas ile buyutulur -- Instagram
 # 1080x1920 bekliyor ve kendi olceklemesini yapmasindansa biz yapalim.
-RES_SIZE = {"480p": (480, 854), "720p": (720, 1280), "1080p": (1080, 1920)}
+RES_SIZE = {"480p": (480, 854), "768p": (768, 1366),
+            "720p": (720, 1280), "1080p": (1080, 1920)}
 
 
 def request_size(cfg) -> tuple[int, int]:
@@ -81,7 +84,7 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     # 6 vurusun tamami, ayni fiyata iki kat hikaye. (Onceden story_beats ile
     # sadece n vurus seciliyordu, gerisi cope gidiyordu.)
     n = max(1, min(len(idea["shots"]), cfg.video_clips))
-    groups = ideas.distribute_beats(idea, n)
+    groups = ideas.distribute_beats(idea, n, clip_seconds=cfg.video_clip_seconds)
 
     cost = estimate_cost(cfg, len(groups))
     total_beats = sum(len(g) for g in groups)

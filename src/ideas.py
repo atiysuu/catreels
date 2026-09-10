@@ -71,8 +71,14 @@ Shape the beats like a joke, not like a tragedy:
 Rules:
 - EVERYTHING in ENGLISH. Global audience: no idioms or references that do not travel.
 - Refer to the cats BY NAME in every beat, so the sequence reads as one story.
-- Each beat is ONE clear physical moment with a visible facial expression and body
-  language, 10-20 words. No speech, no thought bubbles, no text in the image.
+- SOMETHING MUST HAPPEN IN EVERY BEAT. A beat is never a cat holding a pose or simply
+  looking at something. In each beat a cat MOVES and an OBJECT REACTS: something is
+  knocked over, dragged, spilled, snatched, slammed, squeezed into, jumped onto, or
+  sent rolling across the floor. Physical comedy, not portraits.
+- Chain the beats by consequence: what an object does at the end of one beat causes
+  the next one. The episode should feel like one accident gathering speed.
+- Each beat is 12-22 words: who moves, what they do, what the object does, and the
+  expression on their face. No speech, no thought bubbles, no text in the image.
 - The cats are REAL cats photographed on a real set: chubby, round-faced, adorable.
   Never cartoon, never Pixar, never 3D render, never illustration. No clothing.
 - The caption should feel like a friend captioning their pets: light, funny, and it
@@ -215,7 +221,11 @@ def _normalise(idea: dict, pair, situation: str, location: str, style: str,
     return out
 
 
-def distribute_beats(idea: dict, n_clips: int) -> list[list[dict]]:
+SECONDS_PER_SCENE = 2.0   # bir sahnenin okunabilmesi icin gereken en az sure
+
+
+def distribute_beats(idea: dict, n_clips: int,
+                     clip_seconds: float = 4.0) -> list[list[dict]]:
     """Vuruslari kliplere pay eder -- her klip birden fazla sahne tasiyabilir.
 
     Vurus SECMEK yerine PAYLASTIRIYORUZ: video modeli tek uretimde sahne
@@ -230,10 +240,15 @@ def distribute_beats(idea: dict, n_clips: int) -> list[list[dict]]:
         start = round(i * per)
         end = round((i + 1) * per) if i < n_clips - 1 else len(beats)
         chunk = beats[start:end] or [beats[min(start, len(beats) - 1)]]
-        # Kirparken ILK IKIYI degil, ILK ve SON vurusu aliyoruz: aksi halde
-        # 2 klipte son grup [4,5] olup finali (6) dusuruyordu.
-        if len(chunk) > 2:
-            chunk = [chunk[0], chunk[-1]]
+        # Bir klibe kac sahne sigar: suresine bagli. 4sn'lik klip 2 sahne,
+        # 15sn'lik tek klip 7 sahne tasiyabiliyor. Sabit 2 siniri, tek uzun
+        # klip kullanildiginda bolumun buyuk kismini cope atiyordu.
+        cap = max(1, int(clip_seconds / SECONDS_PER_SCENE))
+        if len(chunk) > cap:
+            # Kirparken ilk ve son mutlaka kalsin (kanca + button), arasi esit
+            # araliklarla secilsin.
+            step = (len(chunk) - 1) / (cap - 1) if cap > 1 else 1
+            chunk = [chunk[round(i * step)] for i in range(cap)]
         groups.append(chunk)
     return groups
 
@@ -248,8 +263,8 @@ def clip_prompt(idea: dict, beats: list[dict]) -> str:
         for i, b in enumerate(beats, 1)
     )
     return (
-        f"{idea['character']} A {len(beats)}-shot sequence with one hard cut between "
-        f"the shots, each shot held for about half the clip. {shots} "
+        f"{idea['character']} A fast-paced {len(beats)}-shot sequence with a hard cut "
+        f"between every shot, each shot roughly equal length. {shots} "
         f"Keep the same cats, the same room and the same lighting across both shots. "
         f"Scene: {idea['setting']}. {idea['style']}. "
         f"Vertical 9:16 composition, subjects fully in frame, expressive faces, "

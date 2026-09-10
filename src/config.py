@@ -50,25 +50,29 @@ class Config:
     pollinations_key: str = field(default_factory=lambda: _str("POLLINATIONS_API_KEY"))
     image_model: str = field(default_factory=lambda: _str("IMAGE_MODEL", "flux"))
     text_model: str = field(default_factory=lambda: _str("TEXT_MODEL", "openai"))
-    # seedance-2.5: 0.1028 $/sn, klip suresi TAM 4sn (min=max=4), 720p tavan,
-    # ses uretebiliyor. 2 klip x 4sn = 8sn = 0.82 $/Reel; 2 gunde bir yayinla
-    # ayda ~12.34 $. Klipler arasi gecis 0 -> tam 8.00sn ve smash cut.
-    video_model: str = field(default_factory=lambda: _str("VIDEO_MODEL", "seedance-2.5"))
-    video_clip_seconds: int = field(default_factory=lambda: _int("VIDEO_CLIP_SECONDS", 4))
-    # DIKKAT: 720p, seedance-2.5'te fiyati 2.25 katina cikariyor
-    # (0.1028 -> 0.2312 $/sn). Varsayilan bilerek 480p.
-    video_resolution: str = field(default_factory=lambda: _str("VIDEO_RESOLUTION", "480p"))
+    # minimax-h3-max-turbo: 768p'de 0.01 $/sn, TEK uretimde 15 saniyeye kadar,
+    # ses uretiyor. 15sn = 0.15 $/Reel; 2 gunde bir yayinla ayda ~2.25 $.
+    # seedance-2.5'e gore 8 kat ucuz, daha yuksek cozunurluk, 28 kat hizli
+    # (32sn vs ~15dk) ve tek uretim oldugu icin sahne surekliligi daha iyi.
+    # Model YALNIZCA 5/10/15 saniye kabul ediyor; ara degerler gecersiz.
+    # Takma adi yok, tam ad sart: "minimax/minimax-h3-max-turbo".
+    video_model: str = field(default_factory=lambda: _str("VIDEO_MODEL", "minimax/minimax-h3-max-turbo"))
+    video_clip_seconds: int = field(default_factory=lambda: _int("VIDEO_CLIP_SECONDS", 15))
+    # DIKKAT: cozunurluk FIYATI degistiriyor. minimax'te 480p 0.00625,
+    # 768p 0.01 $/sn (1.6x). seedance-2.5'te fark daha sert: 0.1028 -> 0.2312.
+    video_resolution: str = field(default_factory=lambda: _str("VIDEO_RESOLUTION", "768p"))
     # Ucretli yolda kac klip uretilecek. Cekim sayisindan ayri tutuluyor:
     # her cekim icin klip uretmek maliyeti 3 katina cikariyordu.
-    video_clips: int = field(default_factory=lambda: _int("VIDEO_CLIPS", 3))
+    video_clips: int = field(default_factory=lambda: _int("VIDEO_CLIPS", 1))
 
     # --- reel bicimi -------------------------------------------------------
     width: int = field(default_factory=lambda: _int("REEL_WIDTH", 1080))
     height: int = field(default_factory=lambda: _int("REEL_HEIGHT", 1920))
     fps: int = field(default_factory=lambda: _int("REEL_FPS", 30))
-    # 6 x 3.0sn - 5 gecis ~ 15.8sn. Reels dagitiminda belirleyici olan
-    # tamamlanma orani; 15-18sn bandi bu icerik icin en yuksegini veriyor.
-    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 6))
+    # 7 vurus. Tek 15sn'lik uretimde hepsi tek klibe giriyor -> sahne basina
+    # ~2.1sn, sitcom temposu. (6 vurus 2.5sn/sahne ile agir kaliyordu.)
+    # Ucretsiz yolda ise 7 x 3.0sn - 6 gecis ~ 18sn ediyor.
+    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 7))
     shot_seconds: float = field(default_factory=lambda: float(_str("SHOT_SECONDS", "3.0")))
     transition_seconds: float = field(default_factory=lambda: float(_str("TRANSITION_SECONDS", "0.5")))
     # Cekim ici gecisleri uzatir: poz degisimi kesme yerine hareket gibi okunur.
