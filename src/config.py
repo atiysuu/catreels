@@ -77,7 +77,7 @@ class Config:
     # 7 vurus. Tek 15sn'lik uretimde hepsi tek klibe giriyor -> sahne basina
     # ~2.1sn, sitcom temposu. (6 vurus 2.5sn/sahne ile agir kaliyordu.)
     # Ucretsiz yolda ise 7 x 3.0sn - 6 gecis ~ 18sn ediyor.
-    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 5))
+    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 3))
     shot_seconds: float = field(default_factory=lambda: float(_str("SHOT_SECONDS", "3.0")))
     transition_seconds: float = field(default_factory=lambda: float(_str("TRANSITION_SECONDS", "0.5")))
     # Cekim ici gecisleri uzatir: poz degisimi kesme yerine hareket gibi okunur.

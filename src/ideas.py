@@ -87,8 +87,11 @@ Rules:
   looking at something. In each beat a cat MOVES and an OBJECT REACTS: something is
   knocked over, dragged, spilled, snatched, slammed, squeezed into, jumped onto, or
   sent rolling across the floor. Physical comedy, not portraits.
-- Chain the beats by consequence: what an object does at the end of one beat causes
-  the next one. The episode should feel like one accident gathering speed.
+- Keep the number of separate events SMALL. Each beat should be one clear thing that
+  takes a few seconds to play out, not a rapid list of five things. Make the single
+  event BIGGER rather than adding more events - one satisfying crash beats four
+  half-seen ones.
+- Chain the beats by consequence: what happens at the end of one beat causes the next.
 - Write each beat as ONE PLAIN SIMPLE SENTENCE, the way a person would describe a
   home video to a friend. 10-18 words. Everyday words only. No camera directions, no
   lighting or lens talk, no adjectives piled up, no film-making jargon.
@@ -264,10 +267,14 @@ def _normalise(idea: dict, pair, situation: str, location: str, style: str,
 
 # Bir sahnenin okunabilmesi icin gereken en az sure.
 #
-# 2.0 iken 8 saniyelik Veo klibine 4 sahne sikisiyordu ve model o kadar
-# kesmeyi temiz cikaramayip hepsini birbirine karistiriyordu. Video modeli
-# bir kurgu programi degil; cok kesme istemek onu zorluyor.
-SECONDS_PER_SCENE = 4.0
+# Bu deger iki kez yukseldi, ikisi de gozlemle:
+#   2.0 -> 8sn'lik klibe 4 sahne sikisiyordu, model hepsini birbirine
+#          karistiriyordu.
+#   4.0 -> 15sn'de 3 sahne; hala fazlaydi, sahneler bozuluyordu.
+#   7.0 -> 15sn'de 2 sahne (7.5sn her biri). Model bir degisimi rahatca
+#          oynatiyor; olay sayisini artirmak yerine olayin KENDISINI
+#          buyutmek daha iyi sonuc veriyor.
+SECONDS_PER_SCENE = 7.0
 
 # Bir klipte en az bu kadar sahne olsun -- tek sahne durgun duruyor.
 MIN_SCENES_PER_CLIP = 2
