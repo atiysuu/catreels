@@ -33,28 +33,41 @@ def check_tooling() -> None:
 def check_media(cfg) -> None:
     tracks = [p for p in config.MUSIC.glob("*")
               if p.suffix.lower() in (".mp3", ".m4a", ".aac", ".wav", ".ogg")]
+    # Video modeli kendi sesini uretiyor (minimax/seedance sesli varyantlari),
+    # bu yuzden muzik artik "olmazsa sessiz kalir" degil, "olursa daha iyi".
     add(OK if tracks else WARN, "muzik dosyalari",
         f"{len(tracks)} parca" if tracks
-        else "assets/music bos -- videolar SESSIZ cikacak, dagitim cok duser")
+        else "assets/music bos -- model sesi var ama muzik yatagi eklenirse daha iyi")
 
 
 def check_text(cfg) -> None:
-    if cfg.gemini_api_key:
+    """Zincirin TAMAMINI dener, ilk calisani bildirir.
+
+    Eskiden cfg.gemini_model tek basina deneniyordu; o alan artik bilerek
+    bos (zincir kendi seciyor) ve bos model adi URL'i bozup 404 veriyordu.
+    """
+    if not cfg.gemini_api_key:
+        add(WARN, "Gemini", "GEMINI_API_KEY yok -- konseptler yerel sablondan gelecek")
+        return
+    from src.textgen import gemini_chain
+    tried = []
+    for model in gemini_chain(cfg):
         try:
             r = requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/"
-                f"{cfg.gemini_model}:generateContent",
+                f"{model}:generateContent",
                 headers={"x-goog-api-key": cfg.gemini_api_key},
                 json={"contents": [{"parts": [{"text": "reply with: ok"}]}]},
                 timeout=60,
             )
-            add(OK if r.status_code == 200 else BAD, "Gemini",
-                f"{cfg.gemini_model} -> HTTP {r.status_code}"
-                + ("" if r.status_code == 200 else f" {r.text[:90]}"))
+            if r.status_code == 200:
+                extra = f" ({len(tried)} model atlandi)" if tried else ""
+                add(OK, "Gemini", f"{model}{extra}")
+                return
+            tried.append(f"{model}:{r.status_code}")
         except requests.RequestException as exc:
-            add(BAD, "Gemini", str(exc)[:90])
-    else:
-        add(WARN, "Gemini", "GEMINI_API_KEY yok -- konseptler yerel sablondan gelecek")
+            tried.append(f"{model}:{type(exc).__name__}")
+    add(BAD, "Gemini", "zincirdeki hicbir model calismadi -> " + ", ".join(tried))
 
 
 def check_images(cfg) -> None:
@@ -80,11 +93,12 @@ def check_images(cfg) -> None:
 
 
 def check_instagram(cfg) -> None:
-    if not (cfg.ig_user_id and cfg.ig_token):
-        add(BAD, "Instagram", "IG_USER_ID / IG_ACCESS_TOKEN tanimli degil")
+    # IG_USER_ID bilerek bos birakiliyor; kimlik tokenden cozuluyor.
+    if not cfg.ig_token:
+        add(BAD, "Instagram", "IG_ACCESS_TOKEN tanimli degil")
         return
     try:
-        r = requests.get(f"{cfg.graph_base}/{cfg.ig_user_id}",
+        r = requests.get(f"{cfg.graph_base}/me",
                          params={"fields": "username,account_type",
                                  "access_token": cfg.ig_token}, timeout=60)
         if r.status_code == 200:

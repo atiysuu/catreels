@@ -1,159 +1,166 @@
-# catreels — otonom AI kedi Reels botu
+# catreels — otonom kedi sitcom'u
 
-Her gün belirlenen saatlerde kendi kendine bir kedi konsepti uydurur, videoyu
-üretir ve Instagram'a Reel olarak yükler. GitHub Actions üzerinde çalışır,
-bilgisayarınızın açık olması gerekmez.
+Her gün 20:00'de kendi kendine bir bölüm yazar, çeker ve Instagram'a Reel
+olarak yükler. GitHub Actions üzerinde çalışır; bilgisayarın kapalı olabilir.
 
 ```
-Gemini (ücretsiz)      Pollinations flux        ffmpeg              GitHub Release        Instagram Graph API
-konsept + açıklama  →  kare görselleri      →  hareket + kurgu  →  public mp4 linki   →  Reel yayını
+Gemini            seedream-5-pro        minimax-h3            ffmpeg           Graph API
+bölüm senaryosu → açılış karesi     →   15 sn animasyon   →   kurgu + ses  →   yayın
+                  (Release'e yüklenir)   (start_frame ile)
 ```
+
+**Maliyet:** ~0,35 $/bölüm → günde 1 yayınla **~10,50 $/ay**.
 
 ---
 
-## Önce ücretsizlik gerçeği
+## Dizi
 
-Kurmadan önce bilmeniz gereken şey: **"Gemini ile ücretsiz AI video" diye bir
-şey yok.** 1 Eylül 2026 itibarıyla canlı olarak doğruladım:
+Sabit kadro, sabit ev. Espri karakterden çıkıyor: Pasha'nın tembelliğini
+bilince kanepe sahnesinde ne yapacağını tahmin edip gülüyorsun.
 
-| Servis | Durum | Not |
+| | |
+|---|---|
+| **Pasha** | Kanepenin kendini atamış kralı. Tembel, gururlu, her aksiliği kişisel hakaret sayar |
+| **Mochi** | Evi toplayan endişeli olan. Erken ve sık panikler |
+| **Olive** | Olayları başlatan dolapçı. Planı hep geri teper |
+| **Biscuit** | Her şeyi yiyen sessiz ev arkadaşı. En kötü anda belirir |
+
+Kadro `src/cast.py`'de. Karakter tarifi modelden gelmiyor — her bölümde
+birebir aynı metin isteme giriyor. Diziyi dizi yapan şey bu.
+
+---
+
+## Neden bu mimari
+
+Üç şey deneyerek bulundu, üçü de sayıyla doğrulandı.
+
+### Açılış karesi (image-to-video)
+
+Başta saf text-to-video kullanılıyordu: modelden aynı anda kedileri çizmesi,
+odayı kurması **ve** hareketi oynatması isteniyordu. Karakterler kayıyor,
+sahneler birbirine giriyordu.
+
+Araştırma bunun mimari bir sınır olduğunu söylüyor — image-to-video'da
+modelin tek işi hareket kaldığı için çıktı öngörülebilir oluyor. Ölçümle de
+doğrulandı: başlangıç karesi verilen testte kedi kalktı, bardağa yürüdü,
+devirdi ve kenardan aşağı baktı; aynı istem karesiz verildiğinde model
+hiçbir şeyi oynatmadı.
+
+> Açılış karesi **public** bir adreste olmalı — video servisi onu kendi
+> indiriyor. `gen.pollinations.ai` adresi kimlik istediği için doğrudan
+> verilemiyor (401); bu yüzden kare GitHub Release'e yükleniyor.
+
+### Düz istem
+
+Stil blokları, kamera notları ve "not CGI" listeleri içeren mühendislik
+istemi, insan gibi yazılmış sade bir istemle karşılaştırıldı. **Düz istem
+açık ara kazandı** — model kısa cümleleri daha iyi oynatıyor, uzun teknik
+metin onu boğuyor.
+
+Yoğun karakter tarifi artık yalnızca **açılış karesinde** kullanılıyor;
+orada detay işe yarıyor.
+
+### Az sahne, büyük olay
+
+Sahne başına düşen süre iki kez yükseltildi, ikisi de gözlemle:
+
+| sn/sahne | 15 sn'de | Sonuç |
 |---|---|---|
-| Gemini API — metin | ✅ ücretsiz | AI Studio anahtarı, kart istemiyor |
-| Gemini API — Veo (video) | ❌ ücretli | Free tier yok, saniye başı ücret |
-| Pollinations — flux görsel | ✅ ücretsiz, anahtarsız | 576×1024 ile sınırlı |
-| Pollinations — metin | ❌ anonimde kapalı | 32 karakterlik istek bile HTTP 402 |
-| Pollinations — video | ❌ ücretli | Tüm modeller `paid_only`, Pollen kredisi |
+| 2,0 | 7 sahne | Birbirine giriyordu |
+| 4,0 | 3 sahne | Hâlâ bozuluyordu |
+| **7,0** | **2 sahne** | Temiz |
 
-Bu yüzden proje iki video yolu ile geliyor:
+Olay sayısını artırmak yerine olayın kendisini büyütmek daha iyi sonuç
+veriyor: bir tatmin edici devrilme, yarım görünen dört taneden iyi.
 
-**`VIDEO_BACKEND=free` (varsayılan, gerçekten bedava)**
-Tek bir seed kilitlenip aynı kedi 7 farklı pozda üretilir, ffmpeg bunları
-Ken Burns hareketi + geçişlerle akıcı bir videoya çevirir. Sınırsız çalışır.
-Karakter tutarlılığı şaşırtıcı derecede iyi — aynı kedi, aynı papyon, her karede.
+---
 
-**`VIDEO_BACKEND=pollinations` (gerçek AI video, ücretli)**
-Gerçekten hareket eden klipler. `wan-fast` ile 4 klip × 5 sn ≈ **0,20 Pollen
-(~0,20 $)** — yani günde 1 Reel ≈ ayda ~6 $. Kredi biterse otomatik olarak
-ücretsiz yola düşer, hat durmaz.
+## Servis durumları (ölçülmüş)
+
+| Servis | Durum |
+|---|---|
+| Gemini metin | ✅ ücretsiz — `gemini-flash-latest` zincirin başında |
+| Gemini Pro | ❌ ücretsiz katmanda yok (429), faturalandırma ister |
+| `gen.pollinations.ai` görsel | ✅ gerçek yüksek çözünürlük (seedream 1504×2672) |
+| `image.pollinations.ai` | ⚠️ **model parametresini yok sayıyor** — hep 576×1024, filigranlı |
+| Kling 3.0 | ❌ Pollinations'ta yok; fal.ai'de ayda 27–40 $ |
+
+Denenip bırakılanlar: **Veo 3.1 Fast** (görüntüsü daha iyi ama 8 saniyede
+ya durgun ya karmakarışık, ayda 24 $), **seedance-2.5** (ayda 18,50 $,
+480p), **ücretsiz flux + ffmpeg** (slayt görünümü).
 
 ---
 
 ## Kurulum
 
-### 1. Depoyu hazırlayın
-
-```bash
-git init && git add . && git commit -m "catreels" && git push
-```
-
-> Depo **public** olmalı: Instagram videoyu GitHub Release linkinden indirecek.
-> Gizli kalması gerekiyorsa `HOST_MODE=r2` ile Cloudflare R2 kullanın.
-
-### 2. Gemini anahtarı (ücretsiz)
-
-[aistudio.google.com/apikey](https://aistudio.google.com/apikey) → Create API key.
-Kredi kartı istemez. `gemini-2.5-flash` ücretsiz katmanda günde ~500 istek verir;
-günde 3 Reel bunun binde biri.
-
-### 3. Instagram tarafı
-
-1. Instagram hesabınızı **Professional** (Business veya Creator) yapın.
-2. [developers.facebook.com](https://developers.facebook.com) → yeni uygulama →
-   **Instagram** ürününü ekleyin (*Instagram API with Instagram Login*).
-3. İzinler: `instagram_business_basic` + `instagram_business_content_publish`.
-4. Uzun ömürlü token ve Instagram user ID'yi alın.
-
-> **App Review gerekmez.** Uygulama "Development" modundayken yalnızca
-> uygulamada rolü olan hesaplar adına işlem yapabilir — kendi hesabınıza
-> gönderi attığınız için bu tam olarak istediğiniz şey. Kendinizi uygulamaya
-> admin/tester olarak ekleyin, yeterli. App Review ancak başkalarının
-> hesaplarına yayın yapacaksanız gerekir.
-
-Doğrulayın:
-
-```bash
-python -m src.main --check
-```
-
-Hesap adı ve 24 saatlik kota yazdırıyorsa bağlantı hazır.
-
-Tüm kurulumu tek bakışta görmek için:
-
-```bash
-python scripts/doctor.py
-```
-
-ffmpeg, font, müzik, Gemini, Pollinations, Instagram ve barındırma —
-her biri için OK / UYARI / EKSIK satırı basar.
-
-### 4. Secrets
-
-Depo → Settings → Secrets and variables → Actions:
+Secrets → [Settings → Secrets → Actions](../../settings/secrets/actions):
 
 | Secret | Zorunlu | Ne için |
 |---|---|---|
-| `GEMINI_API_KEY` | önerilir | Konsept ve açıklama üretimi |
-| `IG_USER_ID` | ✅ | Instagram hesap kimliği |
-| `IG_ACCESS_TOKEN` | ✅ | Uzun ömürlü token |
+| `IG_ACCESS_TOKEN` | ✅ | Instagram yayını |
+| `GEMINI_API_KEY` | ✅ | Bölüm senaryosu |
+| `POLLINATIONS_API_KEY` | ✅ | Açılış karesi + video (Pollen bakiyesi gerekir) |
 | `GH_PAT` | önerilir | Token yenileme (izin: Secrets → Read and write) |
-| `POLLINATIONS_API_KEY` | hayır | Daha yüksek çözünürlük / ücretli video yolu |
 
-`GITHUB_TOKEN` otomatik gelir, eklemenize gerek yok.
+`GITHUB_TOKEN` otomatik gelir. Depo **public** olmalı: Instagram videoyu
+Release linkinden indiriyor.
 
-### 5. Müzik ekleyin — bunu atlamayın
+Kontrol:
 
-`assets/music/` klasörüne 3-5 adet telifsiz mp3 koyun. Boş bırakırsanız
-video **sessiz** çıkar ve sessiz Reel'ler algoritmada neredeyse hiç
-dağıtılmaz. Pixabay Music veya YouTube Audio Library uygun kaynaklar.
-Her çalışmada rastgele biri seçilir, `loudnorm` ile seviyesi eşitlenir.
+```bash
+python scripts/doctor.py        # tüm bağımlılıklar ve anahtarlar
+python -m src.main --check      # sadece Instagram bağlantısı
+```
 
 ---
 
 ## Kullanım
 
 ```bash
-python -m src.main --dry-run     # üret, yayınlama (out/latest.mp4)
-python -m src.main --check       # sadece Instagram bağlantısını dene
-python -m src.main               # tam akış
-python -m src.main --backend pollinations   # bu çalışma için ücretli yol
+python -m src.main --dry-run              # üret, yayınlama
+python scripts/produce.py --clips 1 --episode 12 --name test
+python scripts/publish_file.py --video manual/x.mp4 --caption manual/x.txt
 ```
 
-Actions sekmesinden **Gunluk Reel → Run workflow** ile elle de tetikleyebilirsiniz;
-`dry_run` kutusu işaretliyken video artifact olarak iner, Instagram'a gitmez.
-
-Varsayılan yayın saatleri (TR): **10:00, 15:00, 20:00**. Değiştirmek için
-`.github/workflows/daily-reel.yml` içindeki cron satırlarını düzenleyin —
-GitHub cron **UTC** çalışır, Türkiye UTC+3'tür.
+Actions'tan elle: **Gunluk Reel** (üretir + yayınlar) veya
+**Hazir videoyu yayinla** (repodaki bir mp4'ü yayınlar, Pollen harcamaz).
 
 ---
 
-## Bilmeniz gereken tuzaklar
+## Ayarlar
 
-**Token 60 günde ölür.** `refresh-token.yml` her pazartesi yeniler. `GH_PAT`
-tanımlamazsanız yenileme yapılır ama secret güncellenemez ve iş akışı bilerek
-kırmızı yanar — sessizce durmasındansa uyarması daha iyi.
+`src/config.py` tek doğruluk kaynağı. `.env` yalnızca sırları taşır —
+oraya ayar yazmak kod güncellemelerini sessizce ezer, daha önce iki kez
+yaşandı (ölü Gemini modeli ve eski `REEL_SHOTS`).
 
-**GitHub 60 gün hareketsiz depolarda zamanlanmış iş akışlarını durdurur.**
-Günlük iş akışı `state/history.json` dosyasını commit'lediği için depo sürekli
-aktif kalır; bu yan etki bilinçlidir.
+| Değişken | Varsayılan | Etkisi |
+|---|---|---|
+| `VIDEO_MODEL` | `minimax/minimax-h3-max-turbo` | Takma adı yok, tam ad şart |
+| `VIDEO_RESOLUTION` | `1080p` | 480p 0,00625 / 768p 0,01 / 1080p 0,02 $/sn |
+| `VIDEO_CLIP_SECONDS` | `15` | Model **yalnızca** 5/10/15 kabul eder |
+| `REEL_SHOTS` | `3` | Senaryo vuruşu; videoda ilk ve son kullanılır |
+| `KEYFRAME_MODEL` | `seedream-5-pro` | Açılış karesi |
+| `USE_KEYFRAME` | `1` | Kapatılırsa saf text-to-video |
+| `VIDEO_BACKEND` | `pollinations` | Bakiye biterse otomatik `free`'ye düşer |
 
-**Görseller 576×1024 geliyor ve bu değişmiyor.** Dört farklı boyut istedim,
-dördünde de aynısı geldi. **Anahtar eklemek de kaldırmıyor** — anahtarlı olarak
-da test edildi, tavan aynı. Ücretsiz `flux` arka planda küçük bir modeli
-(`lykon/dreamshaper-8-lcm`) çalıştırıyor; tavan oradan geliyor.
+---
 
-1080×1920'ye lanczos + `cas` + `unsharp` ile büyütülüyor; sonuç izlenebilir
-ama native değil. Native 1080p'nin tek yolu ücretli video modeli
-(`seedance-pro`). Anahtarın gerçek faydası hız: istek arası bekleme
-16 saniyeden 2 saniyeye düşüyor, koşu ~9 dakikadan ~2 dakikaya iniyor.
+## Bilinen tuzaklar
 
-**Zamanlanmış çalışmalar gecikebilir.** GitHub yoğunlukta cron'u 15+ dakika
-öteleyebilir. Dakikası dakikasına yayın gerekiyorsa VPS'e taşıyın.
+**Bakiye bitince sessizce ücretsiz yola düşer.** Yayın durmaz ama slayt
+görünümlü video yayınlanır. 9 Eylül'de bakiye 3. klibe yetmeyince bölüm
+12 yerine 8 saniye çıktı.
 
-**Kota:** Instagram 24 saatte 50 gönderiye izin veriyor; günde 3 Reel çok rahat.
+**Token 60 günde ölür.** `refresh-token.yml` haftalık yeniler ve bitiş
+tarihini `state/token_expiry.json`'a yazar; günlük çalışma 14 günden az
+kalınca uyarır. `GH_PAT` yoksa secret otomatik güncellenmez.
 
-**İlk gönderilerde acele etmeyin.** Yeni bir hesapta günde 3 otomatik gönderiyle
-başlamak yerine 1'e düşürüp birkaç hafta ısıtmak daha güvenli.
+**Yükleme sonrası CDN gecikmesi.** Asset Release'e çıktıktan sonra
+yayılması birkaç saniye sürüyor; `verify()` bu yüzden 5 kez deniyor.
+Tek denemeyken bir yayın tamamen düşmüştü.
+
+**GitHub 60 gün hareketsiz depoda cron'u durdurur.** Günlük iş akışı
+`state/history.json` commit'lediği için depo aktif kalır.
 
 ---
 
@@ -161,21 +168,16 @@ başlamak yerine 1'e düşürüp birkaç hafta ısıtmak daha güvenli.
 
 ```
 src/
-  main.py           uçtan uca akış, --dry-run / --check
-  ideas.py          kedi konsept üreticisi + yerel yedek havuzu
-  textgen.py        Gemini → Pollinations → yerel şablon sırası
-  pollinations.py   görsel/metin/video istemcisi, hız sınırı yönetimi
+  main.py        uçtan uca akış
+  cast.py        sabit kadro ve ev
+  ideas.py       bölüm senaryosu + düz istem kurucusu
+  keyframe.py    açılış karesi üretimi ve yayınlanması
+  textgen.py     Gemini zinciri -> Pollinations -> yerel şablon
   backends/
-    free_motion.py  seed kilitli görseller + ffmpeg hareketi
-    ai_video.py     gerçek AI video klipleri (Pollen)
-  assemble.py       ffmpeg: Ken Burns, geçişler, kanca metni, ses, kodlama
-  host.py           GitHub Release / R2 / hazır URL + erişim doğrulama
-  instagram.py      Graph API: container → durum → yayın
-state/history.json  üretilen her Reel'in kaydı (tekrar önleme)
+    ai_video.py    image-to-video (Pollen harcar)
+    free_motion.py görsel + ffmpeg hareketi (bedava yedek)
+  assemble.py    ffmpeg kurgu, kanca metni, kodlama
+  audio.py       model sesi + müzik + efekt karışımı
+  host.py        Release'e yükleme ve public doğrulama
+  instagram.py   Graph API yayını
 ```
-
-## Konu havuzunu değiştirmek
-
-`src/ideas.py` içindeki `THEMES` sözlüğü. Şu an dört tema var: `dans`, `ask`,
-`karikoca`, `arkadas`. Yeni satır eklemek yeterli — Gemini onu tam bir çekim
-listesine genişletir.

@@ -109,8 +109,12 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     start_url = None
     if cfg.use_keyframe:
         try:
+            # Dosya adi her bolumde FARKLI olmali: ayni ad ayni public URL
+            # demek ve CDN onceki bolumun karesini sunabiliyor. Video servisi
+            # eski kareyi cekerse bolum yanlis goruntuyle baslar.
+            kf_name = f"keyframe-{workdir.name.lstrip('_')}-{seed}.jpg"
             kf = keyframe.render(cfg, keyframe.build_prompt(idea, groups[0][0]),
-                                 workdir / "keyframe.jpg", seed=seed)
+                                 workdir / kf_name, seed=seed)
             start_url = keyframe.publish(cfg, kf)
         except PollinationsError as exc:
             log.warn(f"acilis karesi uretilemedi ({exc}); karesiz devam ediliyor")
