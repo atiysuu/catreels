@@ -179,6 +179,9 @@ class Pollinations:
         # gercek cozunurluk ayri parametreyle isteniyor ve FIYATI DEGISTIRIYOR.
         if resolution:
             params["resolution"] = resolution
+        # Baslangic karesi: modelin isi "yarat" degil "hareket ettir" olur.
+        # Adres kimlik dogrulamasiz erisilebilir olmali -- video servisi
+        # gorseli kendi sunucusundan indiriyor.
         if start_image:
             params["image"] = start_image
         url = GEN_BASE + "/video/" + urllib.parse.quote(prompt, safe="") + "?" + urllib.parse.urlencode(params)

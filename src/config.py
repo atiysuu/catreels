@@ -49,18 +49,23 @@ class Config:
     # --- Pollinations ------------------------------------------------------
     pollinations_key: str = field(default_factory=lambda: _str("POLLINATIONS_API_KEY"))
     image_model: str = field(default_factory=lambda: _str("IMAGE_MODEL", "flux"))
+    # Acilis karesi modeli. Ucretsiz uc (image.pollinations.ai) model
+    # parametresini yok sayip 576x1024 donduruyor ve filigran basiyor;
+    # kaliteli kare gen.pollinations.ai uzerinden ucretli modelden gelir.
+    keyframe_model: str = field(default_factory=lambda: _str("KEYFRAME_MODEL", "seedream-5-pro"))
+    use_keyframe: bool = field(default_factory=lambda: _bool("USE_KEYFRAME", True))
     text_model: str = field(default_factory=lambda: _str("TEXT_MODEL", "openai"))
-    # minimax-h3-max-turbo: 768p'de 0.01 $/sn, TEK uretimde 15 saniyeye kadar,
-    # ses uretiyor. 15sn = 0.15 $/Reel; 2 gunde bir yayinla ayda ~2.25 $.
-    # seedance-2.5'e gore 8 kat ucuz, daha yuksek cozunurluk, 28 kat hizli
-    # (32sn vs ~15dk) ve tek uretim oldugu icin sahne surekliligi daha iyi.
-    # Model YALNIZCA 5/10/15 saniye kabul ediyor; ara degerler gecersiz.
-    # Takma adi yok, tam ad sart: "minimax/minimax-h3-max-turbo".
+    # minimax-h3-max-turbo @1080p: 0.02 $/sn, 15 saniye = 0.30 $/Reel.
+    # Acilis karesiyle birlikte ~0.35 $/bolum, gunluk yayinla ~10.50 $/ay.
+    # Ses uretiyor, start_frame kabul ediyor, sure 5/10/15 olabilir.
+    #
+    # Veo 3.1 Fast denendi ve birakildi: goruntusu daha iyi ama 8 saniyede
+    # ya durgun ya karmakarisik cikiyordu ve 0.80 $/bolum (ayda 24 $) idi.
     video_model: str = field(default_factory=lambda: _str("VIDEO_MODEL", "minimax/minimax-h3-max-turbo"))
     video_clip_seconds: int = field(default_factory=lambda: _int("VIDEO_CLIP_SECONDS", 15))
     # DIKKAT: cozunurluk FIYATI degistiriyor. minimax'te 480p 0.00625,
     # 768p 0.01 $/sn (1.6x). seedance-2.5'te fark daha sert: 0.1028 -> 0.2312.
-    video_resolution: str = field(default_factory=lambda: _str("VIDEO_RESOLUTION", "768p"))
+    video_resolution: str = field(default_factory=lambda: _str("VIDEO_RESOLUTION", "1080p"))
     # Ucretli yolda kac klip uretilecek. Cekim sayisindan ayri tutuluyor:
     # her cekim icin klip uretmek maliyeti 3 katina cikariyordu.
     video_clips: int = field(default_factory=lambda: _int("VIDEO_CLIPS", 1))
@@ -72,7 +77,7 @@ class Config:
     # 7 vurus. Tek 15sn'lik uretimde hepsi tek klibe giriyor -> sahne basina
     # ~2.1sn, sitcom temposu. (6 vurus 2.5sn/sahne ile agir kaliyordu.)
     # Ucretsiz yolda ise 7 x 3.0sn - 6 gecis ~ 18sn ediyor.
-    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 7))
+    shots: int = field(default_factory=lambda: _int("REEL_SHOTS", 5))
     shot_seconds: float = field(default_factory=lambda: float(_str("SHOT_SECONDS", "3.0")))
     transition_seconds: float = field(default_factory=lambda: float(_str("TRANSITION_SECONDS", "0.5")))
     # Cekim ici gecisleri uzatir: poz degisimi kesme yerine hareket gibi okunur.

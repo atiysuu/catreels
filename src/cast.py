@@ -21,6 +21,7 @@ isteme giriyor.
 CAST = {
     "pasha": {
         "name": "Pasha",
+        "short": "a big fat orange tabby cat",
         "look": ("Pasha, a very overweight ginger tabby domestic shorthair with classic "
                  "swirled tabby markings, a low hanging belly that sways when he walks, "
                  "short thick legs, heavy jowls, narrow sleepy amber eyes and a white "
@@ -30,6 +31,7 @@ CAST = {
     },
     "mochi": {
         "name": "Mochi",
+        "short": "a small fluffy white cat",
         "look": ("Mochi, a small plump cream-white long-haired cat with a slightly "
                  "matted ruff, faint tabby ghost markings on her legs, a pink nose with "
                  "a small dark freckle, thin whiskers that bend unevenly and pale blue "
@@ -39,6 +41,7 @@ CAST = {
     },
     "olive": {
         "name": "Olive",
+        "short": "a chubby black cat with a white chest",
         "look": ("Olive, a stocky black domestic shorthair with a ragged white bib on "
                  "her chest, one white front paw, a few stray white hairs on her flank, "
                  "a slightly notched left ear and narrow yellow-green eyes"),
@@ -47,6 +50,7 @@ CAST = {
     },
     "biscuit": {
         "name": "Biscuit",
+        "short": "a thick grey british shorthair cat",
         "look": ("Biscuit, a thickset blue-grey British Shorthair with a broad square "
                  "muzzle, dense plush coat that stands up slightly on his shoulders, a "
                  "heavy neck, and small round copper eyes with a flat unreadable stare"),
@@ -79,18 +83,37 @@ PAIRINGS = [
 ]
 
 
+def plain(keys: list[str]) -> str:
+    """Duz, insan gibi yazilmis kisa tanim.
+
+    Yogun `look` metni istem muhendisligi icin yazilmisti; testte DUZ istem
+    daha iyi sonuc verdi, o yuzden video istemlerinde artik bu kullaniliyor.
+    Yogun tarif yalnizca acilis karesinde ise yarar -- orada detay iyi.
+    """
+    return " and ".join(CAST[k]["short"] for k in keys if k in CAST)
+
+
 def describe(keys: list[str]) -> str:
     """Secili kadronun gorsel tarifi -- her bolumde BIREBIR ayni metin."""
     return " ".join(CAST[k]["look"] + "." for k in keys if k in CAST)
 
 
 def roster(keys: list[str]) -> str:
-    """Senaryo yazarina verilecek karakter ozeti."""
+    """Senaryo yazarina verilecek karakter ozeti.
+
+    Sade tarif ("call it exactly") ZORUNLU veriliyor. Yalnizca "kedilere
+    sade tarifle atifta bulun" demek yetmedi: model sahnede olmayan bir kedi
+    uydurdu -- kadro beyaz + siyah kediyken vuruslarda "the chubby tabby cat"
+    yazdi. Istem kendi kendisiyle celisince video da bozuluyor.
+    """
     lines = []
     for k in keys:
         c = CAST.get(k)
         if c:
-            lines.append(f"- {c['name']}: {c['role']}. {c['traits']}.")
+            lines.append(
+                f'- {c["name"]} -- in the beats you MUST call this cat exactly '
+                f'"{c["short"]}". {c["role"]}. {c["traits"]}.'
+            )
     return "\n".join(lines)
 
 

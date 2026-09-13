@@ -88,12 +88,19 @@ def _prune_release_assets(cfg, keep: int) -> None:
             log.info(f"eski asset temizlendi: {asset['name']}")
 
 
+CONTENT_TYPES = {".mp4": "video/mp4", ".jpg": "image/jpeg",
+                 ".jpeg": "image/jpeg", ".png": "image/png"}
+
+
 def _upload_release(cfg, path: pathlib.Path) -> str:
     release = _ensure_release(cfg)
     name = path.name
     _delete_existing_asset(cfg, release, name)
 
-    headers = _gh_headers(cfg) | {"Content-Type": "video/mp4"}
+    # Icerik tipi uzantidan: acilis kareleri de ayni release'e yukleniyor ve
+    # her seyi video/mp4 diye isaretlemek gorsel indirmelerini bozuyordu.
+    ctype = CONTENT_TYPES.get(path.suffix.lower(), "application/octet-stream")
+    headers = _gh_headers(cfg) | {"Content-Type": ctype}
     with path.open("rb") as fh:
         r = requests.post(
             f"{GH_UPLOAD}/repos/{cfg.gh_repo}/releases/{release['id']}/assets",
@@ -186,3 +193,32 @@ def verify(url: str, attempts: int = 5) -> None:
             time.sleep(wait)
 
     raise HostError(f"public URL {attempts} denemede dogrulanamadi -> {last} ({url})")
+
+
+def verify_image(url: str, attempts: int = 5) -> None:
+    """Acilis karesi public olarak indirilebiliyor mu.
+
+    Video servisi kareyi KENDISI cekiyor; erisemezse istegi tumden
+    reddediyor ("Failed to download the file"). Bu yuzden gondermeden once
+    biz dogruluyoruz. verify() ile ayni yeniden deneme mantigi: asset
+    yuklendikten hemen sonra CDN'e yayilmasi birkac saniye suruyor.
+    """
+    last = ""
+    for i in range(1, attempts + 1):
+        try:
+            r = requests.get(url, stream=True, timeout=60, allow_redirects=True)
+            head = next(r.iter_content(chunk_size=4), b"")
+            status = r.status_code
+            r.close()
+            # JPEG 0xFFD8 ile, PNG 0x89504E47 ile baslar.
+            jpeg = head[:2] == bytes((0xFF, 0xD8))
+            png = head[:4] == bytes((0x89, 0x50, 0x4E, 0x47))
+            if status == 200 and (jpeg or png):
+                log.info("acilis karesi public olarak dogrulandi")
+                return
+            last = f"HTTP {status}, ilk baytlar={head!r}"
+        except requests.RequestException as exc:
+            last = f"{type(exc).__name__}: {exc}"
+        if i < attempts:
+            time.sleep(3 * i)
+    raise HostError(f"acilis karesi dogrulanamadi -> {last} ({url})")

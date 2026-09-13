@@ -6,7 +6,7 @@ Butce asilirsa ucretsiz yola dusmek icin main.py fallback uygular.
 """
 import pathlib
 
-from .. import assemble, ideas, log
+from .. import assemble, ideas, keyframe, log
 from ..pollinations import PollinationsError, new_seed
 
 # Modellerin Pollen/saniye fiyatlari (bilgi amacli; canli liste /models ucunda).
@@ -18,6 +18,9 @@ PRICE_BY_RES = {
     ("seedance-2.5", "720p"): 0.2312,
     ("minimax/minimax-h3-max-turbo", "480p"): 0.00625,
     ("minimax/minimax-h3-max-turbo", "768p"): 0.01,
+    ("minimax/minimax-h3-max-turbo", "1080p"): 0.02,
+    ("veo-3.1-fast", "720p"): 0.08,
+    ("veo-3.1-fast", "1080p"): 0.10,
 }
 
 PRICE_PER_SEC = {
@@ -100,14 +103,31 @@ def produce(client, cfg, idea: dict, workdir: pathlib.Path) -> pathlib.Path:
     raw_dir = workdir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
 
+    # ACILIS KARESI: modelin isi "yarat" degil "hareket ettir" olsun diye
+    # once yuksek kaliteli bir kare uretip public bir adrese koyuyoruz.
+    # Karakter tutarliligini ve sahne butunlugunu asil saglayan sey bu.
+    start_url = None
+    if cfg.use_keyframe:
+        try:
+            kf = keyframe.render(cfg, keyframe.build_prompt(idea, groups[0][0]),
+                                 workdir / "keyframe.jpg", seed=seed)
+            start_url = keyframe.publish(cfg, kf)
+        except PollinationsError as exc:
+            log.warn(f"acilis karesi uretilemedi ({exc}); karesiz devam ediliyor")
+    if not start_url:
+        log.warn("acilis karesi yok -- saf text-to-video; tutarlilik duSebilir")
+
     clips: list[pathlib.Path] = []
     for i, beats in enumerate(groups):
-        prompt = ideas.clip_prompt(idea, beats)
+        # Karsilastirmali testte DUZ istem, stil/kamera bloklu muhendislik
+        # istemini acik ara yendi -- model kisa sade cumleleri daha iyi oynatiyor.
+        prompt = ideas.plain_prompt(idea, beats)
         raw = raw_dir / f"v{i:02d}.mp4"
         try:
             client.video(prompt, raw, seed=seed, seconds=cfg.video_clip_seconds,
                          aspect="9:16", width=rw, height=rh,
-                         resolution=cfg.video_resolution)
+                         resolution=cfg.video_resolution,
+                         start_image=start_url if i == 0 else None)
             log.info(f"  klip {i:02d} hazir ({raw.stat().st_size // 1024}KB)")
         except PollinationsError as exc:
             log.warn(f"  klip {i:02d} uretilemedi: {exc}")

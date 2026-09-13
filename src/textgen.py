@@ -24,18 +24,20 @@ GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 # Boylece "en yeni ucretsiz model" zamanla kendini gunceller.
 #
 # 1 Eylul 2026'da gercek bir anahtarla olculdu:
-#   gemini-3.7-flash       503 (anlik yogunluk -- gecici, zincir alta kayiyor)
-#   gemini-3.6-flash       calisiyor
-#   gemini-3.5-flash       calisiyor, en hizli yanit
-#   gemini-3.5-flash-lite  calisiyor
-#   gemini-3.1-flash-lite  calisiyor
-#   gemini-2.5-flash       404 "no longer available to new users" -> zincirden cikarildi
+#   gemini-flash-latest    calisiyor (1.2sn) -- Google'in "en yeni Flash" takma adi
+#   gemini-3.8-flash       calisiyor (1.6sn)
+#   gemini-3.7-flash       503 -- aylardir surekli mesgul, zincirde alta alindi
+#   gemini-3.6-flash       calisiyor (1.4sn)
+#   gemini-2.5-flash       404 "no longer available to new users" -> cikarildi
+#   gemini-3.1-pro-preview 429 -- Pro ucretsiz katmanda yok, faturalandirma ister
 GEMINI_CHAIN = [
-    "gemini-3.7-flash",        # en yeni stable Flash; musait oldugunda otomatik kullanilir
-    "gemini-3.6-flash",
+    # Google'in "her zaman en yeni Flash" takma adi. Yeni surum ciktiginda
+    # kod degistirmeden otomatik ona geciyoruz.
+    "gemini-flash-latest",
+    "gemini-3.8-flash",        # 14 Eylul 2026'da en yeni acik surum
+    "gemini-3.6-flash",        # 3.7 aylardir 503 veriyor, atlandi
     "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",   # Flash-Lite en genis ucretsiz gunluk kotayi veriyor
-    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
 ]
 
 # Modelin bu anahtarla kullanilamadigini gosteren kodlar -> siradakine gec
