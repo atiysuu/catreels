@@ -1,13 +1,17 @@
 name: Gunluk Reel
 
 on:
-  schedule:
-    # GitHub cron UTC calisir. Turkiye = UTC+3 (yaz saati uygulanmiyor).
-    #
-    # Gunde 1 gonderi. minimax-h3-max-turbo ile 15sn Reel 0.15 $ tuttugu
-    # icin bu siklik ayda ~4.50 $ ediyor -- 2 gunde bire gore fark kucuk,
-    # gunluk yayin ise hesabin buyumesi icin belirgin sekilde daha iyi.
-    - cron: "0 17 * * *"   # 20:00 TR, her gun
+  # OTOMATIK YAYIN DURDURULDU (25 Eylul 2026, kullanici istegi).
+  # Tekrar baslatmak icin asagidaki iki satirin basindaki # isaretlerini
+  # kaldirmak yeterli; baska hicbir sey degismedi.
+  #
+  # GitHub cron UTC calisir, Turkiye UTC+3 (yaz saati uygulanmiyor).
+  # "0 17 * * *" = her gun 20:00 TR.
+  #
+  # schedule:
+  #   - cron: "0 17 * * *"
+  #
+  # Elle calistirma acik kaliyor: Actions > Run workflow.
   workflow_dispatch:
     inputs:
       dry_run:
