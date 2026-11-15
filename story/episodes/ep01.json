@@ -1,0 +1,28 @@
+{
+  "series": "KULE",
+  "episode": 1,
+  "day": 1,
+  "days_total": 40,
+  "choices": {
+    "question": "NE YAPMALIYIM?",
+    "a": "Aşağı in, adamla konuş",
+    "b": "Kapıyı kapat, sabahı bekle",
+    "hint": "Yorumlara A ya da B yaz · çoğunluk ne derse o olacak"
+  },
+  "segments": [
+    {"key": "01", "shots": [["tower", 1.0]],
+     "text": "Kırk gün. Bana verilen tek kural bu. Bu kulede kırk gün kalırsam, bütün borcum silinecek."},
+    {"key": "02", "shots": [["door", 1.0]],
+     "text": "Kapı arkamdan kilitlendi. Anahtarı bana vermediler."},
+    {"key": "03", "shots": [["room", 1.0]],
+     "text": "Yukarıda su, konserve ve tek bir pencere var. Yalnız olacaksın, dediler."},
+    {"key": "04", "shots": [["stairs", 1.0]], "footsteps": true,
+     "text": "Birinci gece. Saat üçe doğru merdivenlerden ayak sesleri geldi. Yavaş... sanki hiç acelesi yokmuş gibi."},
+    {"key": "05", "shots": [["note", 1.0]],
+     "text": "Sesler kapımın önünde durdu. Kapının altından bir kâğıt kaydı. Üzerinde tek bir cümle vardı: Kırkıncı gün, kimse çıkmadı."},
+    {"key": "06", "shots": [["window", 0.72], ["key", 0.28]], "hit_at": 0.80,
+     "text": "Pencereye koştum. Aşağıda, sisin içinde, siyah paltolu bir adam duruyordu. Bana bakıyordu. Ve elinde... bir anahtar vardı."},
+    {"key": "07", "shots": [["choice", 1.0]], "card_at": 0.17,
+     "text": "Şimdi karar vermem lazım. Aşağı inip o adamla mı konuşayım, yoksa kapıyı kapatıp sabahı mı bekleyeyim? Yorumlara A ya da B yazın. Ne derseniz, onu yapacağım."}
+  ]
+}

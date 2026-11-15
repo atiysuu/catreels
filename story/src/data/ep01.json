@@ -1,0 +1,255 @@
+{
+ "fps": 30,
+ "frames": 1496,
+ "series": "KULE",
+ "episode": 1,
+ "day": 1,
+ "daysTotal": 40,
+ "audio": "ep01/mix.wav",
+ "shots": [
+  {
+   "scene": "tower",
+   "from": 0,
+   "dur": 177
+  },
+  {
+   "scene": "door",
+   "from": 177,
+   "dur": 96
+  },
+  {
+   "scene": "room",
+   "from": 272,
+   "dur": 156
+  },
+  {
+   "scene": "stairs",
+   "from": 429,
+   "dur": 221
+  },
+  {
+   "scene": "note",
+   "from": 649,
+   "dur": 251
+  },
+  {
+   "scene": "window",
+   "from": 900,
+   "dur": 170
+  },
+  {
+   "scene": "key",
+   "from": 1070,
+   "dur": 66
+  },
+  {
+   "scene": "choice",
+   "from": 1136,
+   "dur": 359
+  }
+ ],
+ "subs": [
+  {
+   "from": 0,
+   "to": 18,
+   "text": "Kırk gün."
+  },
+  {
+   "from": 18,
+   "to": 70,
+   "text": "Bana verilen tek kural bu."
+  },
+  {
+   "from": 70,
+   "to": 106,
+   "text": "Bu kulede kırk gün"
+  },
+  {
+   "from": 106,
+   "to": 150,
+   "text": "kalırsam, bütün borcum"
+  },
+  {
+   "from": 150,
+   "to": 171,
+   "text": "silinecek."
+  },
+  {
+   "from": 177,
+   "to": 221,
+   "text": "Kapı arkamdan kilitlendi."
+  },
+  {
+   "from": 221,
+   "to": 266,
+   "text": "Anahtarı bana vermediler."
+  },
+  {
+   "from": 272,
+   "to": 324,
+   "text": "Yukarıda su, konserve ve"
+  },
+  {
+   "from": 324,
+   "to": 367,
+   "text": "tek bir pencere var."
+  },
+  {
+   "from": 367,
+   "to": 423,
+   "text": "Yalnız olacaksın, dediler."
+  },
+  {
+   "from": 429,
+   "to": 457,
+   "text": "Birinci gece."
+  },
+  {
+   "from": 457,
+   "to": 488,
+   "text": "Saat üçe doğru"
+  },
+  {
+   "from": 488,
+   "to": 529,
+   "text": "merdivenlerden ayak"
+  },
+  {
+   "from": 529,
+   "to": 560,
+   "text": "sesleri geldi."
+  },
+  {
+   "from": 560,
+   "to": 617,
+   "text": "Yavaş... sanki hiç acelesi"
+  },
+  {
+   "from": 617,
+   "to": 643,
+   "text": "yokmuş gibi."
+  },
+  {
+   "from": 649,
+   "to": 694,
+   "text": "Sesler kapımın önünde"
+  },
+  {
+   "from": 694,
+   "to": 742,
+   "text": "durdu. Kapının altından"
+  },
+  {
+   "from": 742,
+   "to": 776,
+   "text": "bir kâğıt kaydı."
+  },
+  {
+   "from": 776,
+   "to": 822,
+   "text": "Üzerinde tek bir cümle"
+  },
+  {
+   "from": 822,
+   "to": 877,
+   "text": "vardı: Kırkıncı gün, kimse"
+  },
+  {
+   "from": 877,
+   "to": 894,
+   "text": "çıkmadı."
+  },
+  {
+   "from": 900,
+   "to": 934,
+   "text": "Pencereye koştum."
+  },
+  {
+   "from": 934,
+   "to": 978,
+   "text": "Aşağıda, sisin içinde,"
+  },
+  {
+   "from": 978,
+   "to": 1021,
+   "text": "siyah paltolu bir adam"
+  },
+  {
+   "from": 1021,
+   "to": 1041,
+   "text": "duruyordu."
+  },
+  {
+   "from": 1041,
+   "to": 1071,
+   "text": "Bana bakıyordu."
+  },
+  {
+   "from": 1071,
+   "to": 1095,
+   "text": "Ve elinde..."
+  },
+  {
+   "from": 1095,
+   "to": 1130,
+   "text": "bir anahtar vardı."
+  },
+  {
+   "from": 1136,
+   "to": 1184,
+   "text": "Şimdi karar vermem lazım."
+  },
+  {
+   "from": 1184,
+   "to": 1226,
+   "text": "Aşağı inip o adamla mı"
+  },
+  {
+   "from": 1226,
+   "to": 1270,
+   "text": "konuşayım, yoksa kapıyı"
+  },
+  {
+   "from": 1270,
+   "to": 1303,
+   "text": "kapatıp sabahı mı"
+  },
+  {
+   "from": 1303,
+   "to": 1324,
+   "text": "bekleyeyim?"
+  },
+  {
+   "from": 1324,
+   "to": 1374,
+   "text": "Yorumlara A ya da B yazın."
+  },
+  {
+   "from": 1374,
+   "to": 1404,
+   "text": "Ne derseniz, onu"
+  },
+  {
+   "from": 1404,
+   "to": 1424,
+   "text": "yapacağım."
+  }
+ ],
+ "steps": [
+  435,
+  463,
+  495,
+  523,
+  555,
+  583,
+  615
+ ],
+ "titleUntil": 180,
+ "card": {
+  "question": "NE YAPMALIYIM?",
+  "a": "Aşağı in, adamla konuş",
+  "b": "Kapıyı kapat, sabahı bekle",
+  "hint": "Yorumlara A ya da B yaz · çoğunluk ne derse o olacak",
+  "from": 1185
+ }
+}

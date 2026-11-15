@@ -1,0 +1,57 @@
+name: Bolum yayinla (push)
+
+# publish/ klasorune YENI eklenen her mp4'u Instagram'a Reel olarak atar.
+# Aciklama ayni adli .txt dosyasindan okunur (publish/kule-ep01.txt gibi).
+#
+# Zamanlanmis calisma YOK: yayin yalnizca biri bu klasore dosya ekleyip
+# push ettiginde olur. Var olan dosyayi degistirmek yeniden yayinlamaz
+# (--diff-filter=A, yalnizca eklenenler).
+on:
+  push:
+    branches: [main]
+    paths: ["publish/*.mp4"]
+
+concurrency:
+  group: reel-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # release asset yukleme
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Sistem bagimliliklari
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - run: pip install -q -r requirements.txt
+
+      - name: Yeni bolumleri yayinla
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          HOST_MODE: release
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if git cat-file -e "$BEFORE" 2>/dev/null; then BASE="$BEFORE"; else BASE="HEAD~1"; fi
+          FILES=$(git diff --name-only --diff-filter=A "$BASE" HEAD -- 'publish/*.mp4')
+          if [ -z "$FILES" ]; then echo "yeni mp4 yok"; exit 0; fi
+          for f in $FILES; do
+            echo "::group::$f"
+            python scripts/publish_file.py --video "$f" --caption "${f%.mp4}.txt"
+            echo "::endgroup::"
+          done
